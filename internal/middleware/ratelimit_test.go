@@ -37,7 +37,7 @@ func TestRateLimit_BlocksAfterBurst(t *testing.T) {
 		ExemptPaths:       nil,
 	}
 	h := RateLimit(context.Background(), cfg, newQuietLogger())(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) }),
+		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(200) }),
 	)
 	statuses := make([]int, 10)
 	for i := range statuses {
@@ -90,7 +90,7 @@ func TestRateLimit_ClientIPFromRemoteAddr(t *testing.T) {
 		Burst:             1,
 	}
 	h := RateLimit(context.Background(), cfg, newQuietLogger())(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) }),
+		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(200) }),
 	)
 	// Two different IPs should each get their own bucket
 	for i, ip := range []string{"1.1.1.1:1111", "2.2.2.2:2222"} {

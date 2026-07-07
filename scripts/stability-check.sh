@@ -54,7 +54,12 @@ build() {
 start_monitor() {
   case "$MODE" in
     direct)
-      "$BIN" --port "$PORT" >"$ARTIFACT_DIR/monitor.log" 2>&1 &
+      cat >"$ARTIFACT_DIR/config.yaml" <<YAML
+server:
+  host: 127.0.0.1
+  port: $PORT
+YAML
+      "$BIN" -config "$ARTIFACT_DIR/config.yaml" >"$ARTIFACT_DIR/monitor.log" 2>&1 &
       echo $! >"$ARTIFACT_DIR/monitor.pid"
       ;;
     systemd)

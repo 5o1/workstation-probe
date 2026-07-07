@@ -61,7 +61,9 @@ func (m *Module) Shutdown(_ context.Context) error {
 	return nil
 }
 
+	// Name returns "gpu".
 func (m *Module) Name() string  { return "gpu" }
+	// Enabled reports whether NVML is available on this host.
 func (m *Module) Enabled() bool { return m.enabled.Load() }
 
 // DisabledReason returns the reason given by the collector when Init
@@ -73,8 +75,10 @@ func (m *Module) DisabledReason() string {
 	return m.profile.DisabledReason
 }
 
+	// Profile returns the static metadata captured at startup.
 func (m *Module) Profile() any { return m.profile }
 
+	// Start launches the sampling goroutine and returns immediately.
 func (m *Module) Start(ctx context.Context) error {
 	if !m.Enabled() {
 		// nothing to do; the disabled sample is published once at New()
@@ -84,6 +88,7 @@ func (m *Module) Start(ctx context.Context) error {
 	return nil
 }
 
+	// Latest returns the most recent sample or nil.
 func (m *Module) Latest() any {
 	if m.base == nil {
 		return nil
@@ -91,6 +96,7 @@ func (m *Module) Latest() any {
 	return m.base.Latest()
 }
 
+	// History returns samples within the trailing duration d, oldest first.
 func (m *Module) History(d time.Duration) []any {
 	if m.base == nil {
 		return nil
@@ -173,6 +179,7 @@ func (m *Module) Peak(d time.Duration) any {
 	return &latest
 }
 
+	// LastSampleAge returns the time since the most recent sample.
 func (m *Module) LastSampleAge() time.Duration {
 	if m.base == nil {
 		return time.Duration(1<<63 - 1)

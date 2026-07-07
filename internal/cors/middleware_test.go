@@ -8,7 +8,7 @@ import (
 
 func TestCORS_Disabled_NoOp(t *testing.T) {
 	called := false
-	h := Middleware(Config{Enabled: false})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	h := Middleware(Config{Enabled: false})(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		called = true
 	}))
 	rr := httptest.NewRecorder()
@@ -30,7 +30,7 @@ func TestCORS_AllowedOrigin_HeadersAttached(t *testing.T) {
 		AllowMethods:   []string{"GET", "OPTIONS"},
 		AllowHeaders:   []string{"Content-Type"},
 		MaxAgeSeconds:  300,
-	})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	})(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {}))
 
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/metrics", nil)
@@ -52,7 +52,7 @@ func TestCORS_WildcardMatch(t *testing.T) {
 	h := Middleware(Config{
 		Enabled:        true,
 		AllowedOrigins: []string{"https://*.example.com"},
-	})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	})(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {}))
 
 	cases := []struct {
 		origin string

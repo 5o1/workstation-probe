@@ -1,24 +1,19 @@
-# golangci-lint configuration (v2 schema).
-# Docs: https://golangci-lint.run/product/migration-guide/
+# golangci-lint configuration (v2.5.0 schema).
+# Migration guide: https://golangci-lint.run/docs/product/migration-guide
 
 version: "2"
-
-run:
-  timeout: 5m
-  tests: true
-  modules-download-mode: readonly
 
 linters:
   default: standard
   enable:
-    - errcheck       # unhandled errors
-    - govet          # standard library govet
-    - staticcheck    # heavy hitter: nil deref, error wrapping, etc.
-    - unused         # unused vars / funcs / imports
-    - ineffassign    # unused assignments
-    - gocritic       # style + perf hints
-    - revive         # exported-name / doc-comment conventions
-    # gofmt + goimports are part of the default set in v2.
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - gocritic
+    - revive
+    # gofmt + goimports come from the standard set.
 
   settings:
     gocritic:
@@ -36,20 +31,15 @@ linters:
 
   exclusions:
     rules:
-      # Test files: ignore errcheck (testing.T methods don't need it) and
-      # gocritic style nits (test setup often needs the "obvious" path).
       - path: _test\.go
         linters:
           - errcheck
           - gocritic
-          - dupl       # test fixtures are repetitive by design
+          - dupl
 
-      # Vendored / generated / build output — never lint.
       - path: '.*\.(pb|gen)\.go$'
         linters: [all]
 
-    # Skip entire subtrees that contain no Go code (Hugo content, test
-    # fixtures, web assets).
     paths:
       - 'webview/hugo/exampleSite/.*'
       - 'webview/hugo/test/.*'
@@ -60,6 +50,7 @@ linters:
       - '.*\.yml$'
       - '.*\.md$'
 
-    # Don't truncate output.
-    max-issues-per-linter: 0
-    max-same-issues: 0
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly

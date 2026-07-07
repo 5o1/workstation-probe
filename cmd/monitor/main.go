@@ -69,6 +69,9 @@ func run() int {
 	}
 
 	rootCtx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	// SIGHUP is ignored so the process is not killed by logrotate or the
+	// stability test HUP drill.
+	signal.Notify(make(chan os.Signal, 1), syscall.SIGHUP)
 	defer cancel()
 
 	// Build enabled modules. Disabled modules are omitted entirely so the
