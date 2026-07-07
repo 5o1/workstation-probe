@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/assaneko/workstation-probe/internal/config"
+	"github.com/assaneko/workstation-probe/internal/lock"
 	"github.com/assaneko/workstation-probe/internal/cpu"
 	"github.com/assaneko/workstation-probe/internal/gpu"
 	"github.com/assaneko/workstation-probe/internal/logging"
@@ -35,8 +36,21 @@ func main() {
 }
 
 func run() int {
-	configPath := flag.String("config", "", "path to YAML config file (required)")
+	configPath := flag.String("config", "", "path to YAML config file")
+	pidFile := flag.String("pid-file", "/tmp/monitor.pid", "path to PID lock file")
 	flag.Parse()
+
+	// Acquire single-instance lock before any initialization.
+	lock, err := lock.Acquire(*pidFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "monitor: %v\n", err)
+		return 1
+	}
+	defer func() {
+		if err := lock.Release(); err != nil {
+			slog.Error("release lock failed", "err", err, "path", *pidFile)
+		}
+	}()
 
 	if *configPath == "" {
 		slog.Error("-config is required")
