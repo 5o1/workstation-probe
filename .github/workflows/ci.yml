@@ -2,8 +2,13 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'release/**'
   pull_request:
+    branches:
+      - main
+      - 'release/**'
 
 # Cancel in-progress runs for the same branch when a new commit lands.
 concurrency:
@@ -64,9 +69,9 @@ jobs:
           cache: true
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v1.62.2
+          version: v1.64.8
           args: --timeout=5m
 
   # ---------------------------------------------------------------------
@@ -81,7 +86,7 @@ jobs:
 
       - name: Install Hugo
         run: |
-          HUGO_VERSION=0.142.0
+          HUGO_VERSION=0.163.3
           curl -fsSL -o /tmp/hugo.tar.gz \
             "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz"
           tar -xzf /tmp/hugo.tar.gz -C /tmp hugo
@@ -90,3 +95,30 @@ jobs:
 
       - name: Snapshot test
         run: ./webview/hugo/test/run.sh
+
+  # ---------------------------------------------------------------------
+  # Stability: only required on the active release branch. Mirrors
+  # scripts/stability-check.sh but capped to a few minutes so CI stays
+  # affordable. The real soak is driven manually per docs/STABILITY.md.
+  # ---------------------------------------------------------------------
+  stability:
+    name: stability smoke
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+
+      - name: Build (race)
+        run: CGO_ENABLED=1 go build -race -o monitor ./cmd/monitor
+
+      - name: Run short soak
+        env:
+          STABILITY_DURATION: 2m
+          MODE: direct
+          MONITOR_PORT: '19090'
+        run: ./scripts/stability-check.sh
