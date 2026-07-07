@@ -44,3 +44,8 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+
+# Agent and assistant files
+.codex/
+.agents/
+AGENTS.md
