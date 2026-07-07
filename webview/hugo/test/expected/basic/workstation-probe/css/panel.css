@@ -1,0 +1,921 @@
+/* panel.css — workstation-probe webview panel styles.
+ *
+ * Layout:
+ *   .workstation-probe-panel
+ *     .workstation-probe-panel-header
+ *       h3 (name)
+ *       .workstation-probe-panel-meta (status + last-fetch + refresh)
+ *     .workstation-probe-panel-body
+ *       .workstation-probe-sub[]  (one per module)
+ *         .workstation-probe-sub-header (label + status dot)
+ *         .workstation-probe-sub-value (hero number)
+ *         .workstation-probe-sub-chart (canvas)
+ *         .workstation-probe-sub-meta (module-specific context)
+ *
+ * Every selector uses the full project name as a prefix to avoid
+ * colliding with the consuming site's own styles. CSS variables
+ * cascade only within a .workstation-probe-panel element so the
+ * theme cannot leak out.
+ */
+
+.workstation-probe-panel {
+  /* === Theme tokens (scoped to the panel) === */
+  --wsp-bg: #0d1117;
+  --wsp-fg: #e6edf3;
+  --wsp-fg-dim: #7d8590;
+  --wsp-fg-faint: #484f58;
+  --wsp-accent: #58a6ff;
+  --wsp-ok: #3fb950;
+  --wsp-warn: #d29922;
+  --wsp-err: #f85149;
+  --wsp-card-bg: #161b22;
+  --wsp-card-bg-hover: #1c2129;
+  --wsp-sub-bg: #0d1117;
+  --wsp-border: #30363d;
+  --wsp-border-soft: #21262d;
+  --wsp-skeleton: #21262d;
+  --wsp-skeleton-highlight: #30363d;
+  --wsp-radius: 8px;
+  --wsp-radius-sm: 6px;
+  --wsp-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  --wsp-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --wsp-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+
+  --wsp-cpu: #58a6ff;
+  --wsp-memory: #3fb950;
+  --wsp-gpu: #d29922;
+  --wsp-storage: #a371f7;
+
+  /* === Container === */
+  background: var(--wsp-card-bg);
+  color: var(--wsp-fg);
+  border: 1px solid var(--wsp-border);
+  border-radius: var(--wsp-radius);
+  margin: 2rem 0;
+  overflow: hidden;
+  font-family: var(--wsp-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: var(--wsp-shadow);
+  transition: opacity 0.3s ease;
+}
+
+.workstation-probe-panel[data-wsp-stale="true"] {
+  opacity: 0.5;
+}
+
+@media (prefers-color-scheme: light) {
+  .workstation-probe-panel {
+    --wsp-bg: #ffffff;
+    --wsp-fg: #1f2328;
+    --wsp-fg-dim: #656d76;
+    --wsp-fg-faint: #afb8c1;
+    --wsp-accent: #0969da;
+    --wsp-ok: #1a7f37;
+    --wsp-warn: #9a6700;
+    --wsp-err: #cf222e;
+    --wsp-card-bg: #ffffff;
+    --wsp-card-bg-hover: #f6f8fa;
+    --wsp-sub-bg: #f6f8fa;
+    --wsp-border: #d0d7de;
+    --wsp-border-soft: #e6eaef;
+    --wsp-skeleton: #e6eaef;
+    --wsp-skeleton-highlight: #f6f8fa;
+    --wsp-shadow: 0 1px 2px rgba(31, 35, 40, 0.06);
+    --wsp-cpu: #0969da;
+    --wsp-memory: #1a7f37;
+    --wsp-gpu: #9a6700;
+    --wsp-storage: #8250df;
+  }
+}
+
+/* === Header === */
+
+.workstation-probe-panel-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: linear-gradient(180deg, var(--wsp-card-bg-hover) 0%, var(--wsp-card-bg) 100%);
+  border-bottom: 1px solid var(--wsp-border);
+}
+
+.workstation-probe-panel-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: var(--wsp-mono);
+  color: var(--wsp-fg);
+  letter-spacing: -0.01em;
+}
+
+.workstation-probe-panel-header-uri {
+  font-size: 0.75rem;
+  color: var(--wsp-fg-dim);
+  font-family: var(--wsp-mono);
+}
+
+.workstation-probe-panel-header-facts {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: var(--wsp-fg-dim);
+  font-family: var(--wsp-mono);
+}
+
+.workstation-probe-panel-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  font-family: var(--wsp-mono);
+  font-size: 0.75rem;
+  color: var(--wsp-fg-dim);
+}
+
+.workstation-probe-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.workstation-probe-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wsp-fg-faint);
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.workstation-probe-panel-spinner {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 2px solid var(--wsp-border);
+  border-top-color: var(--wsp-accent);
+  border-radius: 50%;
+  animation: wsp-spin 0.8s linear infinite;
+}
+
+.workstation-probe-status:not([data-state="connecting"]) .workstation-probe-panel-spinner {
+  display: none;
+}
+
+.workstation-probe-status[data-state="connecting"] .workstation-probe-status-dot {
+  display: none;
+}
+
+.workstation-probe-status[data-state="ok"] .workstation-probe-status-dot {
+  background: var(--wsp-ok);
+  animation: wsp-pulse 2.4s ease-in-out infinite;
+}
+
+.workstation-probe-status[data-state="warn"] .workstation-probe-status-dot,
+.workstation-probe-status[data-state="stale"] .workstation-probe-status-dot {
+  background: var(--wsp-warn);
+}
+
+.workstation-probe-status[data-state="error"] .workstation-probe-status-dot {
+  background: var(--wsp-err);
+}
+
+@keyframes wsp-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
+  50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(63, 185, 80, 0.15); }
+}
+
+@keyframes wsp-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes wsp-skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workstation-probe-status[data-state="ok"] .workstation-probe-status-dot {
+    animation: none;
+  }
+
+  .workstation-probe-panel-spinner,
+  .workstation-probe-panel-skeleton-block,
+  .workstation-probe-panel-skeleton-line {
+    animation: none;
+  }
+}
+
+.workstation-probe-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+@media (max-width: 720px) {
+  .workstation-probe-panel-header-uri {
+    display: none;
+  }
+
+  .workstation-probe-panel-header-facts {
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .workstation-probe-panel-meta {
+    margin-left: auto;
+  }
+}
+
+/* === Body / vertical stack of sub-panels ===
+ *
+ * Sub-panels sit flush against each other and against the panel's outer
+ * border. The only visual separator is a 2px colored accent stripe at
+ * the top of each sub-panel (the `::before` pseudo-element on
+ * .workstation-probe-sub), which doubles as both module indicator and
+ * inter-panel divider. */
+
+.workstation-probe-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+
+/* === Sub-panel ===
+ *
+ * No border, no padding, no border-radius — the sub-panel is a logical
+ * "slot" inside the panel rather than a nested card. Per-element
+ * padding (header / value / chart / meta) provides the visual breathing
+ * room internally. The 2px colored accent stripe at the top serves as
+ * the visual separator between sub-panels and as a module identifier. */
+
+.workstation-probe-sub {
+  position: relative;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  transition: background-color 0.15s ease;
+}
+
+.workstation-probe-sub:hover {
+  background-color: rgba(255, 255, 255, 0.015);
+}
+
+@media (prefers-color-scheme: light) {
+  .workstation-probe-sub:hover {
+    background-color: rgba(0, 0, 0, 0.015);
+  }
+}
+
+/* === Loading skeleton ===
+ *
+ * The shortcode emits this skeleton before boot.js runs, and boot.js
+ * keeps the same shape until the first /metrics response arrives. The
+ * goal is to reserve the final panel footprint with neutral grey blocks
+ * so the rest of the page can finish layout while data is still loading.
+ */
+.workstation-probe-panel-loading-body {
+  padding: 0.75rem 1.25rem 1rem;
+}
+
+.workstation-probe-panel-skeleton-block,
+.workstation-probe-panel-skeleton-line {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--wsp-skeleton) 0%,
+    var(--wsp-skeleton-highlight) 48%,
+    var(--wsp-skeleton) 100%
+  );
+  background-size: 200% 100%;
+  animation: wsp-skeleton 1.35s ease-in-out infinite;
+}
+
+.workstation-probe-panel-skeleton-line {
+  height: 0.75rem;
+  border-radius: 999px;
+}
+
+.workstation-probe-panel-skeleton-line + .workstation-probe-panel-skeleton-line {
+  margin-top: 0.5rem;
+}
+
+.workstation-probe-panel-skeleton-line-short {
+  width: 58%;
+}
+
+.workstation-probe-panel-skeleton-bar {
+  height: 16px;
+  border-radius: 3px;
+}
+
+.workstation-probe-panel-loading-cpu {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+  gap: 1px;
+  padding: 0;
+  background: var(--wsp-border);
+}
+
+.workstation-probe-panel-loading-cpu .workstation-probe-panel-skeleton-block {
+  aspect-ratio: 1 / 1;
+}
+
+.workstation-probe-panel-loading-memory,
+.workstation-probe-panel-loading-storage {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.workstation-probe-panel-loading-gpu {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 320px));
+  gap: 1px;
+  padding: 0;
+  background: var(--wsp-border);
+}
+
+.workstation-probe-panel-loading-card {
+  display: grid;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem 0.875rem;
+  background: var(--wsp-sub-bg);
+}
+
+/* 2px accent stripe at the top of every sub-panel. Doubles as the
+   divider between sub-panels (no separate border-top needed) and as a
+   module-color identifier (CPU blue, memory green, GPU amber,
+   storage purple). z-index keeps it above any overflow content from
+   the previous sub-panel. */
+.workstation-probe-sub::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--wsp-accent);
+  opacity: 0.85;
+  z-index: 1;
+}
+
+.workstation-probe-sub[data-workstation-probe-module="cpu"]::before     { background: var(--wsp-cpu); }
+.workstation-probe-sub[data-workstation-probe-module="memory"]::before  { background: var(--wsp-memory); }
+.workstation-probe-sub[data-workstation-probe-module="gpu"]::before     { background: var(--wsp-gpu); }
+.workstation-probe-sub[data-workstation-probe-module="storage"]::before { background: var(--wsp-storage); }
+
+.workstation-probe-sub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 1.25rem 0.5rem;
+}
+
+.workstation-probe-sub-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--wsp-fg-dim);
+}
+
+.workstation-probe-sub[data-workstation-probe-module="cpu"] .workstation-probe-sub-title     { color: var(--wsp-cpu); }
+.workstation-probe-sub[data-workstation-probe-module="memory"] .workstation-probe-sub-title  { color: var(--wsp-memory); }
+.workstation-probe-sub[data-workstation-probe-module="gpu"] .workstation-probe-sub-title     { color: var(--wsp-gpu); }
+.workstation-probe-sub[data-workstation-probe-module="storage"] .workstation-probe-sub-title { color: var(--wsp-storage); }
+
+.workstation-probe-sub-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wsp-fg-faint);
+  transition: background 0.2s ease;
+}
+
+.workstation-probe-sub[data-wsp-sub-state="ok"] .workstation-probe-sub-dot {
+  background: var(--wsp-ok);
+}
+
+.workstation-probe-sub[data-wsp-sub-state="err"] .workstation-probe-sub-dot {
+  background: var(--wsp-err);
+}
+
+.workstation-probe-sub-value {
+  font-family: var(--wsp-mono);
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--wsp-fg);
+  margin: 0.5rem 1.25rem 0.75rem;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.15s ease;
+}
+
+.workstation-probe-sub-value[data-state="err"] {
+  color: var(--wsp-err);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* === Memory htop-style stacked bar ===
+ *
+ * The membar is the primary visualisation for the memory sub-panel:
+ * the used segment carries a pressure color (green / amber / red at
+ * 60% / 80% thresholds) and the others use htop's fixed hues.
+ * The black available segment fills the remaining space and owns the
+ * right rounded corner. It is Linux MemAvailable, not strictly MemFree.
+ */
+.workstation-probe-sub-membar {
+  margin: 0.5rem 1.25rem 0.75rem;
+}
+
+.workstation-probe-sub-membar-track {
+  display: flex;
+  height: 16px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--wsp-fg-faint);
+  font-size: 0;
+}
+
+.workstation-probe-sub-membar-seg {
+  height: 100%;
+  box-shadow: inset 1px 0 rgba(255, 255, 255, 0.08);
+  transition: filter 0.15s ease;
+}
+
+.workstation-probe-sub-membar-seg:first-child {
+  box-shadow: none;
+}
+
+.workstation-probe-sub-membar-seg:hover {
+  filter: brightness(1.15);
+}
+
+/* === CPU core matrix (per-core current-utilization tiles) ===
+ *
+ * Square tiles, tightly packed, no rounded corners. The 1px gap shows
+ * the container background through as a divider line.
+ *
+ * Each tile shows the CORE INDEX in its centre; the colour itself
+ * encodes the current utilization via RdYlGn_r. Text colour is
+ * computed in JS from luminance for readability on every stop.
+ */
+.workstation-probe-sub[data-workstation-probe-module="cpu"] {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.workstation-probe-sub[data-workstation-probe-module="cpu"] .workstation-probe-sub-header {
+  padding: 0.625rem 1.25rem 0.5rem;
+}
+
+.workstation-probe-sub[data-workstation-probe-module="cpu"] .workstation-probe-sub-meta {
+  margin-top: 0;
+  padding: 0.5rem 1.25rem 0.625rem;
+  border-top: 1px dashed var(--wsp-border-soft);
+}
+
+.workstation-probe-sub[data-workstation-probe-module="cpu"] .workstation-probe-sub-cores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+  gap: 1px;
+  background: var(--wsp-border);
+}
+
+.workstation-probe-sub[data-workstation-probe-module="cpu"] .workstation-probe-sub-core {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--wsp-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  cursor: default;
+  user-select: none;
+  transition: filter 0.12s ease;
+}
+
+.workstation-probe-sub[data-workstation-probe-module="cpu"] .workstation-probe-sub-core:hover {
+  filter: brightness(1.15);
+}
+
+/* === Storage row list ===
+ *
+ * Each row is one mount: [alias] [path] [bar] [percent]. The bar
+ * visualises capacity vs. usage with two visually distinct segments:
+ *   - "used" segment : full bar height (10px), coloured by pressure
+ *   - "free" segment : thin centred line (2px), grey
+ *
+ * Together they share the same horizontal extent without overlapping.
+ * The used segment's colour follows the storage-pressure thresholds
+ * (green < 70%, amber 70–90%, red ≥ 90%) so a full row can be
+ * scanned at a glance to spot the disk that's about to fill up.
+ */
+.workstation-probe-sub-storage {
+  display: flex;
+  flex-direction: column;
+}
+
+.workstation-probe-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  font-family: var(--wsp-mono);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+.workstation-probe-sub-row + .workstation-probe-sub-row {
+  border-top: 1px solid var(--wsp-border-soft);
+}
+
+.workstation-probe-sub-row-alias {
+  font-weight: 700;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wsp-fg);
+  min-width: 56px;
+}
+
+.workstation-probe-sub-row-path {
+  color: var(--wsp-fg-dim);
+  font-size: 0.75rem;
+  min-width: 80px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workstation-probe-sub-row-bar {
+  flex: 1;
+  position: relative;
+  height: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.workstation-probe-sub-row-bar-used {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 10px;
+  border-radius: 1px;
+  transition: width 0.4s ease;
+}
+
+.workstation-probe-sub-row-bar-free {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  height: 2px;
+  background: var(--wsp-fg-faint);
+  border-radius: 1px;
+  transform: translateY(-50%);
+}
+
+.workstation-probe-sub-row-pct {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 56px;
+  text-align: right;
+}
+
+/* === GPU meters (neutral per-device cards) ===
+ *
+ * The GPU panel uses calm cards plus meter colours. The whole card does
+ * not turn red/yellow/green; status is limited to a small dot, a subtle
+ * left edge, and the meter fills. That keeps the panel scan-friendly
+ * when a GPU is busy without flooding the UI with warning colour.
+ */
+.workstation-probe-sub[data-workstation-probe-module="gpu"] {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.workstation-probe-sub[data-workstation-probe-module="gpu"] .workstation-probe-sub-header {
+  padding: 0.625rem 1.25rem 0.5rem;
+}
+
+.workstation-probe-sub[data-workstation-probe-module="gpu"] .workstation-probe-sub-meta {
+  margin-top: 0;
+  padding: 0.5rem 1.25rem 0.625rem;
+  border-top: 1px dashed var(--wsp-border-soft);
+}
+
+.workstation-probe-sub-gpu {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 320px));
+  gap: 1px;
+  background: var(--wsp-border);
+  padding: 0;
+}
+
+.workstation-probe-sub-gpu-cell {
+  --wsp-gpu-status: var(--wsp-fg-faint);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem 0.875rem;
+  background: var(--wsp-sub-bg);
+  box-shadow: inset 3px 0 var(--wsp-gpu-status);
+  min-width: 0;
+}
+
+.workstation-probe-sub-gpu-cell-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.workstation-probe-sub-gpu-cell-id {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--wsp-mono);
+  min-width: 0;
+  flex: 1;
+}
+
+.workstation-probe-sub-gpu-cell-idx {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.25rem;
+  padding: 0 0.25rem;
+  border: 1px solid var(--wsp-border);
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--wsp-fg-dim);
+  background: var(--wsp-card-bg);
+  flex-shrink: 0;
+}
+
+.workstation-probe-sub-gpu-cell-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--wsp-gpu-status);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wsp-gpu-status) 16%, transparent);
+}
+
+.workstation-probe-sub-gpu-cell-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--wsp-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.workstation-probe-sub-gpu-cell-kpis {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-family: var(--wsp-mono);
+  flex-shrink: 0;
+}
+
+.workstation-probe-sub-gpu-cell-kpis > span {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 2.75rem;
+}
+
+.workstation-probe-sub-gpu-cell-kpis span span {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--wsp-fg-dim);
+}
+
+.workstation-probe-sub-gpu-cell-kpis strong {
+  font-size: 1rem;
+  line-height: 1.2;
+  color: var(--wsp-fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.workstation-probe-sub-gpu-cell-error {
+  padding: 0.375rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--wsp-err) 28%, transparent);
+  border-radius: 4px;
+  color: var(--wsp-err);
+  background: color-mix(in srgb, var(--wsp-err) 8%, transparent);
+  font-family: var(--wsp-mono);
+  font-size: 0.75rem;
+}
+
+.workstation-probe-sub-gpu-meters {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.workstation-probe-sub-gpu-meter {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.workstation-probe-sub-gpu-meter-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-family: var(--wsp-mono);
+  min-width: 0;
+}
+
+.workstation-probe-sub-gpu-meter-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wsp-fg-dim);
+  flex-shrink: 0;
+}
+
+.workstation-probe-sub-gpu-meter-value {
+  font-weight: 700;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--wsp-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  min-width: 0;
+}
+
+.workstation-probe-sub-gpu-meter-detail {
+  margin-left: 0.375rem;
+  color: var(--wsp-fg-dim);
+  font-weight: 600;
+}
+
+.workstation-probe-sub-gpu-meter-track {
+  height: 6px;
+  background: var(--wsp-fg-faint);
+  border-radius: 999px;
+  overflow: hidden;
+  opacity: 0.85;
+}
+
+.workstation-probe-sub-gpu-meter-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.4s ease;
+}
+
+@media (max-width: 560px) {
+  .workstation-probe-sub-gpu-cell-top {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .workstation-probe-sub-gpu-cell-kpis {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .workstation-probe-sub-gpu-cell-kpis > span {
+    align-items: flex-start;
+  }
+}
+
+/* Placeholder for disabled / error / no-devices states. */
+.workstation-probe-sub-gpu-empty {
+  padding: 1rem 1.25rem;
+  color: var(--wsp-fg-dim);
+  font-family: var(--wsp-mono);
+  font-size: 0.875rem;
+  text-align: center;
+  display: grid;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.workstation-probe-sub-gpu-empty-title {
+  font-weight: 700;
+}
+
+.workstation-probe-sub-gpu-empty-detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workstation-probe-sub[data-wsp-sub-state="err"] .workstation-probe-sub-gpu-empty {
+  color: var(--wsp-err);
+  opacity: 0.7;
+}
+
+/* === Meta line + legend ===
+ *
+ * Single source for the .workstation-probe-sub-meta rule. The sub-panel
+ * itself has zero padding, so the meta line carries its own internal
+ * padding and a dashed border-top separating it from the data above. */
+
+.workstation-probe-sub-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--wsp-fg-dim);
+  font-family: var(--wsp-mono);
+  margin-top: 0;
+  padding: 0.5rem 1.25rem 0.625rem;
+  border-top: 1px dashed var(--wsp-border-soft);
+  min-height: 1.5em;
+  gap: 0.75rem;
+}
+
+.workstation-probe-sub[data-wsp-sub-state="err"] .workstation-probe-sub-meta {
+  color: var(--wsp-err);
+  opacity: 0.7;
+}
+
+.workstation-probe-sub-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--wsp-fg-faint);
+  flex-shrink: 0;
+}
+
+.workstation-probe-sub-legend-label {
+  font-variant-numeric: tabular-nums;
+}
+
+.workstation-probe-sub-legend-bar {
+  display: inline-block;
+  width: 48px;
+  height: 5px;
+  border-radius: 3px;
+  /* Mirrors the JS RdYlGn_r colormap exactly (11 stops). */
+  background: linear-gradient(
+    to right,
+    #006837 0%,
+    #1a9850 10%,
+    #66bd63 20%,
+    #a6d96a 30%,
+    #d9ef8b 40%,
+    #ffffbf 50%,
+    #fee08b 60%,
+    #fdae61 70%,
+    #f46d43 80%,
+    #d73027 90%,
+    #a50026 100%
+  );
+}
+
+/* === Chart (sparkline for default / gpu module) === */
+
+.workstation-probe-sub-chart {
+  height: 130px;
+  margin: 0 1rem 0.75rem;
+  position: relative;
+}
+
+.workstation-probe-sub-chart canvas {
+  display: block;
+}
+
+/* === Loading skeleton (briefly visible before first sample arrives) === */
+
+.workstation-probe-sub-value[data-loading="true"] {
+  color: var(--wsp-fg-faint);
+}
+
+.workstation-probe-error {
+  padding: 1rem 1.25rem;
+  color: var(--wsp-err);
+  font-family: var(--wsp-mono);
+  font-size: 0.875rem;
+}

@@ -1,0 +1,130 @@
+{{/*
+  workstation-probe-panel shortcode — embeds a live workstation-probe
+  dashboard into prose. The shortcode name is the full project name
+  (workstation-probe-panel) so it does not collide with the generic
+  `panel` shortcode that many Hugo themes and modules ship.
+
+  Usage:
+    {{< workstation-probe-panel "./rig-01.yaml" >}}
+
+  Config resolution order:
+    1. Page-relative file beside the markdown content. Lets a page colocate
+       its panel config and still keep that file out of the generated site.
+    2. Page resource (Page.Resources.Get). Supports standard Hugo bundles.
+    3. configs/<arg> at the project root. Fallback for shared configs that
+       many pages reference.
+
+  Both sources must be plain YAML with this schema:
+    name: <string>          # shown in the panel header
+    api: <string>           # monitor base URL, no trailing slash
+    refresh: <duration>     # poll interval, e.g. "5s", "500ms", "2m"
+    modules: [<string>...]  # sub-panels to render: cpu, memory, gpu, storage
+
+  The shortcode emits a single <div class="workstation-probe-panel"> with
+  the parsed config inlined into a data-workstation-probe-config
+  attribute. The frontend (static/workstation-probe/js/boot.js, loaded
+  via layouts/partials/workstation-probe/scripts.html) finds every such
+  element and wires it up. The full project name is used as the prefix
+  throughout so collision with other modules' CSS classes or data
+  attributes is effectively impossible.
+
+  Hugo 0.158+ requires explicit quoting of values that look like
+  duration scalars ("5s" not 5s) — the YAML parser rejects unquoted ones.
+*/}}
+{{- $relPath := .Get 0 -}}
+{{- if not $relPath -}}
+  {{- errorf "workstation-probe-panel shortcode requires a config path argument, e.g. {{< workstation-probe-panel \"./rig-01.yaml\" >}}" -}}
+{{- end -}}
+{{- $resourcePath := replaceRE "^\\./" "" $relPath -}}
+
+{{- $raw := "" -}}
+{{- with .Page.File -}}
+  {{- $fileRaw := readFile (path.Join "content" .Dir $resourcePath) -}}
+  {{- if $fileRaw -}}
+    {{- $raw = $fileRaw -}}
+  {{- end -}}
+{{- end -}}
+{{- if not $raw -}}
+  {{- $res := .Page.Resources.Get $resourcePath -}}
+  {{- if $res -}}
+    {{- $raw = $res.Content -}}
+  {{- end -}}
+{{- end -}}
+{{- if not $raw -}}
+  {{- $fileRaw := readFile (printf "configs/%s" $resourcePath) -}}
+  {{- if $fileRaw -}}
+    {{- $raw = $fileRaw -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if not $raw -}}
+  {{- errorf "panel config %q not found: tried page-relative file, page resource, then configs/%s" $relPath $resourcePath -}}
+{{- end -}}
+
+{{- $data := $raw | transform.Unmarshal -}}
+<div class="workstation-probe-panel" data-workstation-probe-config='{{ $data | jsonify }}'>
+  <div class="workstation-probe-panel-header">
+    <h3>{{ $data.name | default $data.api }}</h3>
+    <span class="workstation-probe-panel-header-uri" data-workstation-probe-uri="{{ $data.api }}">{{ $data.api }}</span>
+    <span class="workstation-probe-panel-header-facts" data-workstation-probe-header-facts>loading</span>
+    <div class="workstation-probe-panel-meta">
+      <span class="workstation-probe-status" data-state="connecting">
+        <span class="workstation-probe-status-dot" data-workstation-probe-status-dot></span>
+        <span class="workstation-probe-panel-spinner" data-workstation-probe-loading-spinner></span>
+        <span data-workstation-probe-status-text>loading</span>
+      </span>
+      <span class="workstation-probe-refresh" data-workstation-probe-refresh>↻ {{ $data.refresh | default "5s" }}</span>
+    </div>
+  </div>
+  <div class="workstation-probe-panel-body">
+    {{- range $mod := $data.modules }}
+      <div class="workstation-probe-sub" data-workstation-probe-module="{{ $mod }}" data-wsp-sub-state="connecting">
+        <div class="workstation-probe-sub-header">
+          <span class="workstation-probe-sub-title">{{ $mod }}</span>
+          <span class="workstation-probe-sub-dot" data-wsp-sub-dot></span>
+        </div>
+        {{- if eq $mod "cpu" }}
+          <div class="workstation-probe-panel-loading-body workstation-probe-panel-loading-cpu" data-wsp-loading>
+            {{- range seq 12 }}<span class="workstation-probe-panel-skeleton-block"></span>{{- end }}
+          </div>
+        {{- else if eq $mod "memory" }}
+          <div class="workstation-probe-panel-loading-body workstation-probe-panel-loading-memory" data-wsp-loading>
+            <span class="workstation-probe-panel-skeleton-block workstation-probe-panel-skeleton-bar"></span>
+            <span class="workstation-probe-panel-skeleton-line"></span>
+          </div>
+        {{- else if eq $mod "gpu" }}
+          <div class="workstation-probe-panel-loading-body workstation-probe-panel-loading-gpu" data-wsp-loading>
+            {{- range seq 3 }}
+              <div class="workstation-probe-panel-loading-card">
+                <span class="workstation-probe-panel-skeleton-line workstation-probe-panel-skeleton-line-short"></span>
+                <span class="workstation-probe-panel-skeleton-line"></span>
+                <span class="workstation-probe-panel-skeleton-line"></span>
+                <span class="workstation-probe-panel-skeleton-line"></span>
+              </div>
+            {{- end }}
+          </div>
+        {{- else if eq $mod "storage" }}
+          <div class="workstation-probe-panel-loading-body workstation-probe-panel-loading-storage" data-wsp-loading>
+            <span class="workstation-probe-panel-skeleton-line"></span>
+            <span class="workstation-probe-panel-skeleton-line workstation-probe-panel-skeleton-line-short"></span>
+          </div>
+        {{- else }}
+          <div class="workstation-probe-panel-loading-body" data-wsp-loading>
+            <span class="workstation-probe-panel-skeleton-line"></span>
+            <span class="workstation-probe-panel-skeleton-line workstation-probe-panel-skeleton-line-short"></span>
+          </div>
+        {{- end }}
+        <div class="workstation-probe-sub-meta">
+          <span data-wsp-sub-meta-text>loading</span>
+          {{- if eq $mod "cpu" }}
+            <span class="workstation-probe-sub-legend" title="core utilization scale: 0 (cool) → 100 (hot)">
+              <span class="workstation-probe-sub-legend-label">0</span>
+              <span class="workstation-probe-sub-legend-bar"></span>
+              <span class="workstation-probe-sub-legend-label">100</span>
+            </span>
+          {{- end }}
+        </div>
+      </div>
+    {{- end }}
+  </div>
+</div>

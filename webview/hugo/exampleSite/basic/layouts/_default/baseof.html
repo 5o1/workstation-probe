@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="{{ .Site.Language.Locale | default "en" }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ block "title" . }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
+  {{ partial "workstation-probe/scripts.html" . }}
+</head>
+<body>
+  <header class="site-header">
+    <a href="{{ "/" | relURL }}" class="site-title">{{ .Site.Title }}</a>
+  </header>
+  <main class="site-main">
+    {{ block "main" . }}{{ end }}
+  </main>
+  <footer class="site-footer">
+    <small>workstation-probe webview — dev + snapshot test site. Resolves the module via <code>go.mod</code> replace, no absolute paths.</small>
+  </footer>
+</body>
+</html>

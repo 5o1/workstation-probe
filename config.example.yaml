@@ -1,0 +1,37 @@
+server:
+  host: 127.0.0.1                  # 默认只监听本机；需要局域网访问时显式改为 0.0.0.0
+  port: 19090                       # 必填，[1, 65535]
+
+sampler:
+  interval: 1s
+  history_capacity: 60
+
+modules:
+  cpu:
+    enabled: true
+  memory:
+    enabled: true
+  gpu:
+    enabled: true                  # 无 NVIDIA 时启动会 warn 并自动禁用
+  storage:
+    enabled: true
+    mount_points:                  # 每条必须是真实挂载点，启动期与 /proc/mounts 交叉验证
+      - {path: /, alias: root}
+
+security:
+  cors:
+    enabled: false
+    allowed_origins: []
+    allow_methods: [GET, OPTIONS]
+    allow_headers: [Content-Type]
+    max_age_seconds: 600
+  rate_limit:
+    enabled: true
+    requests_per_second: 10
+    burst: 20
+    trust_proxy_headers: false
+    exempt_paths: [/health]
+
+logging:
+  level: info
+  format: json

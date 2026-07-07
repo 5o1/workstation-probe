@@ -1,0 +1,5 @@
+# Generated Hugo build artifacts. The test runner cleans and rebuilds
+# these on every run; checking them in would create churn and risk drift.
+sites/*/public/
+sites/*/resources/
+sites/*/.hugo_build.lock

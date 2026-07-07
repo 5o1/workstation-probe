@@ -1,0 +1,8 @@
+# This file is the Hugo Module manifest, not a site configuration.
+# The user's site (which imports this module) provides baseURL, title,
+# languages, etc. in their own hugo.yaml.
+
+name: workstation-probe-hugo
+description: Embed live workstation-probe dashboards in Hugo markdown via the `panel` shortcode.
+license: MIT
+minimumHugoVersion: 0.158.0

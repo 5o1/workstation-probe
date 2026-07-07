@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en-us">
+<head>
+	<meta name="generator" content="Hugo 0.163.3">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local workstation webview test | Workstation Watch (dev &#43; test)</title>
+  
+<link rel="stylesheet" href="/workstation-probe/css/panel.css">
+<script type="module" src="/workstation-probe/js/boot.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a href="/" class="site-title">Workstation Watch (dev &#43; test)</a>
+  </header>
+  <main class="site-main">
+    
+<section class="list">
+  <h1>Local workstation webview test</h1><p>This page renders the local workstation-probe panel against
+<code>http://localhost:19090</code>.</p>
+<div class="workstation-probe-panel" data-workstation-probe-config='{&#34;api&#34;:&#34;http://localhost:19090&#34;,&#34;modules&#34;:[&#34;cpu&#34;,&#34;memory&#34;,&#34;gpu&#34;,&#34;storage&#34;],&#34;name&#34;:&#34;localhost&#34;,&#34;refresh&#34;:&#34;5s&#34;}'>
+  <div class="workstation-probe-panel-header">
+    <h3>localhost</h3>
+    <span class="workstation-probe-panel-header-uri" data-workstation-probe-uri="http://localhost:19090">http://localhost:19090</span>
+    <span class="workstation-probe-panel-header-facts" data-workstation-probe-header-facts>loading</span>
+    <div class="workstation-probe-panel-meta">
+      <span class="workstation-probe-status" data-state="connecting">
+        <span class="workstation-probe-status-dot" data-workstation-probe-status-dot></span>
+        <span class="workstation-probe-panel-spinner" data-workstation-probe-loading-spinner></span>
+        <span data-workstation-probe-status-text>loading</span>
+      </span>
+      <span class="workstation-probe-refresh" data-workstation-probe-refresh>↻ 5s</span>
+    </div>
+  </div>
+  <div class="workstation-probe-panel-body">
+      <div class="workstation-probe-sub" data-workstation-probe-module="cpu" data-wsp-sub-state="connecting">
+        <div class="workstation-probe-sub-header">
+          <span class="workstation-probe-sub-title">cpu</span>
+          <span class="workstation-probe-sub-dot" data-wsp-sub-dot></span>
+        </div>
+          <div class="workstation-probe-panel-loading-body workstation-probe-panel-loading-cpu" data-wsp-loading><span class="workstation-probe-panel-skeleton-block"></span><span class="workstation-probe-panel-skeleton-block"></span><span class="workstation-probe-panel-skeleton-block"></span><span class="workstation-probe-panel-skeleton-block"></span><span class="workstation-probe-panel-skeleton-block"></span><span class="workstation-probe-panel-skeleton-block"></span><span class="workstation-probe-panel-skeleton-block"></span><span class="workstation-probe-panel-skeleton-block"></span><span class="workstation-probe-panel-skeleton-block"></span><span class="workstation-probe-panel-skeleton-block"></span><span class="workstation-probe-panel-skeleton-block"></span><span class="workstation-probe-panel-skeleton-block"></span>
+          </div>
+        <div class="workstation-probe-sub-meta">
+          <span data-wsp-sub-meta-text>loading</span>
+            <span class="workstation-probe-sub-legend" title="core utilization scale: 0 (cool) → 100 (hot)">
+              <span class="workstation-probe-sub-legend-label">0</span>
+              <span class="workstation-probe-sub-legend-bar"></span>
+              <span class="workstation-probe-sub-legend-label">100</span>
+            </span>
+        </div>
+      </div>
+      <div class="workstation-probe-sub" data-workstation-probe-module="memory" data-wsp-sub-state="connecting">
+        <div class="workstation-probe-sub-header">
+          <span class="workstation-probe-sub-title">memory</span>
+          <span class="workstation-probe-sub-dot" data-wsp-sub-dot></span>
+        </div>
+          <div class="workstation-probe-panel-loading-body workstation-probe-panel-loading-memory" data-wsp-loading>
+            <span class="workstation-probe-panel-skeleton-block workstation-probe-panel-skeleton-bar"></span>
+            <span class="workstation-probe-panel-skeleton-line"></span>
+          </div>
+        <div class="workstation-probe-sub-meta">
+          <span data-wsp-sub-meta-text>loading</span>
+        </div>
+      </div>
+      <div class="workstation-probe-sub" data-workstation-probe-module="gpu" data-wsp-sub-state="connecting">
+        <div class="workstation-probe-sub-header">
+          <span class="workstation-probe-sub-title">gpu</span>
+          <span class="workstation-probe-sub-dot" data-wsp-sub-dot></span>
+        </div>
+          <div class="workstation-probe-panel-loading-body workstation-probe-panel-loading-gpu" data-wsp-loading>
+              <div class="workstation-probe-panel-loading-card">
+                <span class="workstation-probe-panel-skeleton-line workstation-probe-panel-skeleton-line-short"></span>
+                <span class="workstation-probe-panel-skeleton-line"></span>
+                <span class="workstation-probe-panel-skeleton-line"></span>
+                <span class="workstation-probe-panel-skeleton-line"></span>
+              </div>
+              <div class="workstation-probe-panel-loading-card">
+                <span class="workstation-probe-panel-skeleton-line workstation-probe-panel-skeleton-line-short"></span>
+                <span class="workstation-probe-panel-skeleton-line"></span>
+                <span class="workstation-probe-panel-skeleton-line"></span>
+                <span class="workstation-probe-panel-skeleton-line"></span>
+              </div>
+              <div class="workstation-probe-panel-loading-card">
+                <span class="workstation-probe-panel-skeleton-line workstation-probe-panel-skeleton-line-short"></span>
+                <span class="workstation-probe-panel-skeleton-line"></span>
+                <span class="workstation-probe-panel-skeleton-line"></span>
+                <span class="workstation-probe-panel-skeleton-line"></span>
+              </div>
+          </div>
+        <div class="workstation-probe-sub-meta">
+          <span data-wsp-sub-meta-text>loading</span>
+        </div>
+      </div>
+      <div class="workstation-probe-sub" data-workstation-probe-module="storage" data-wsp-sub-state="connecting">
+        <div class="workstation-probe-sub-header">
+          <span class="workstation-probe-sub-title">storage</span>
+          <span class="workstation-probe-sub-dot" data-wsp-sub-dot></span>
+        </div>
+          <div class="workstation-probe-panel-loading-body workstation-probe-panel-loading-storage" data-wsp-loading>
+            <span class="workstation-probe-panel-skeleton-line"></span>
+            <span class="workstation-probe-panel-skeleton-line workstation-probe-panel-skeleton-line-short"></span>
+          </div>
+        <div class="workstation-probe-sub-meta">
+          <span data-wsp-sub-meta-text>loading</span>
+        </div>
+      </div>
+  </div>
+</div>
+
+
+</section>
+
+  </main>
+  <footer class="site-footer">
+    <small>workstation-probe webview — dev + snapshot test site. Resolves the module via <code>go.mod</code> replace, no absolute paths.</small>
+  </footer>
+</body>
+</html>

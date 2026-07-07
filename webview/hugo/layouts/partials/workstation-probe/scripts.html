@@ -1,0 +1,23 @@
+{{/*
+  workstation-probe/scripts.html — single point of contact for the
+  workstation-probe panel frontend. Include once in your site's
+  baseof.html (or wherever you load site-wide scripts):
+
+    {{ partial "workstation-probe/scripts.html" . }}
+
+  Resolves to:
+    <link rel="stylesheet" href="/workstation-probe/css/panel.css">
+    <script type="module" src="/workstation-probe/js/boot.js"></script>
+
+  All asset paths are namespaced under /workstation-probe/ to avoid
+  collisions with the consuming site's own static files. Hugo Modules
+  mount this module's static/ at the site root, so
+  /workstation-probe/css/panel.css is served from
+  static/workstation-probe/css/panel.css inside this module.
+
+  The full project name (not an abbreviation) is used as the path prefix
+  so collision with other modules or with the consuming site's own
+  static files is essentially zero.
+*/}}
+<link rel="stylesheet" href="{{ "workstation-probe/css/panel.css" | relURL }}">
+<script type="module" src="{{ "workstation-probe/js/boot.js" | relURL }}"></script>

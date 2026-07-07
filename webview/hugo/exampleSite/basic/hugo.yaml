@@ -1,0 +1,27 @@
+baseURL: '/'
+title: 'Workstation Watch (dev + test)'
+enableRobotsTXT: false
+defaultContentLanguage: en
+disableKinds:
+  - RSS
+  - sitemap
+  - taxonomy
+  - term
+ignoreFiles:
+  - '(^|/)localhost\.yaml$'
+languages:
+  en:
+    locale: en-us
+    label: English
+
+content:
+  adapters:
+    markdown: {}
+
+# The test/dev site imports the workstation-probe Hugo module. The
+# actual local path of the module is resolved by the `replace`
+# directive in this site's go.mod (../..) so the YAML stays
+# free of absolute paths — clone the repo anywhere, no edits needed.
+module:
+  imports:
+    - path: github.com/assaneko/workstation-probe/webview/hugo

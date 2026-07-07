@@ -1,0 +1,8 @@
+name: localhost
+api: "http://localhost:19090"
+refresh: "5s"
+modules:
+  - cpu
+  - memory
+  - gpu
+  - storage
