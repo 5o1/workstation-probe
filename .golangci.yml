@@ -18,15 +18,12 @@ linters:
     - ineffassign    # unused assignments
     - gocritic       # style + perf hints
     - revive         # exported-name / doc-comment conventions
-    # gofmt / goimports come from the standard set; configured below.
+    # gofmt + goimports are part of the default set in v2.
 
   settings:
     gocritic:
       enabled-tags: [diagnostic, performance, style]
       disabled-checks: [hugeParam, rangeValCopy]
-
-    goimports:
-      local-prefixes: github.com/assaneko/workstation-probe
 
     revive:
       rules:
@@ -63,6 +60,6 @@ linters:
       - '.*\.yml$'
       - '.*\.md$'
 
-  # Don't truncate output.
-  max-issues-per-linter: 0
-  max-same-issues: 0
+    # Don't truncate output.
+    max-issues-per-linter: 0
+    max-same-issues: 0
