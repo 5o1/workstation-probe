@@ -16,7 +16,7 @@ type fakeCollector struct {
 	err    error
 }
 
-func (f *fakeCollector) Usage(ctx context.Context, path string) (Usage, error) {
+func (f *fakeCollector) Usage(_ context.Context, path string) (Usage, error) {
 	if f.err != nil {
 		return Usage{}, f.err
 	}

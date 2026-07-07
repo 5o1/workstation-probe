@@ -42,8 +42,11 @@ func NewWithCollector(c Collector, interval time.Duration, historyCapacity int, 
 	return m, nil
 }
 
+	// Name returns "cpu".
 func (m *Module) Name() string           { return "cpu" }
+	// Enabled reports that the CPU module is always active.
 func (m *Module) Enabled() bool          { return true }
+	// DisabledReason returns ""; the CPU module is never disabled.
 func (m *Module) DisabledReason() string { return "" }
 
 // Shutdown is a no-op for CPU since there are no external resources to release.

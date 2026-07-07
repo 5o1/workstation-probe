@@ -193,7 +193,7 @@ func RegisterRoutes[S any](
 	latestPath := "/metrics/" + name
 	historyPath := latestPath + "/history"
 
-	mux.HandleFunc("GET "+latestPath, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET "+latestPath, func(w http.ResponseWriter, _ *http.Request) {
 		if code, body := callDisabled(disabled); code != 0 {
 			http.Error(w, body, code)
 			return

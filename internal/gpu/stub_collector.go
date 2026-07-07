@@ -1,5 +1,7 @@
 //go:build !nvml
 
+// Package gpu provides GPU metric collection via NVML or a build-time stub.
+//
 // When the `nvml` build tag is absent, NewNVMLCollector returns a stub
 // collector that always reports "NVML support not compiled in". This keeps
 // the default build runnable on machines without libnvidia-ml.so and on

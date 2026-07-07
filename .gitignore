@@ -6,6 +6,7 @@ config.yaml
 
 # Go build outputs and test artifacts
 /monitor
+/monitor.race
 *.exe
 *.exe~
 *.dll
@@ -18,6 +19,9 @@ coverage.*
 profile.cov
 go.work
 go.work.sum
+
+# Build artifacts
+build/
 
 # Hugo generated output and caches
 webview/hugo/exampleSite/*/public/
@@ -44,3 +48,12 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+
+# Agent and assistant files
+.codex/
+.agents/
+AGENTS.md
+
+# Development scratch files
+test-touch
+test-write.txt

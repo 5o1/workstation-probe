@@ -115,11 +115,10 @@ func Load(path string) (*Config, error) {
 	dec := yaml.NewDecoder(bytes.NewReader(raw))
 	dec.KnownFields(true) // reject unknown keys to catch typos early
 	if err := dec.Decode(&c); err != nil {
-		if err == io.EOF {
-			// Empty file → fall back to zero-valued Config; applyDefaults() fills the rest.
-		} else {
+		if err != io.EOF {
 			return nil, fmt.Errorf("parse config %s: %w", path, err)
 		}
+		// Empty file → fall back to zero-valued Config; applyDefaults() fills the rest.
 	}
 
 	c.applyDefaults()
