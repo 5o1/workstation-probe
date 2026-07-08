@@ -181,21 +181,6 @@ RestartSec=5
 StandardOutput=journal
 StandardError=journal
 
-# Sandbox: limit what a compromised process can do. ProtectSystem=strict keeps
-# /etc, /usr, and /boot read-only; this service only needs to read its config
-# and writes logs to journald. MemoryDenyWriteExecute is deliberately omitted:
-# the optional NVML-backed GPU module dlopen()s libnvidia-ml and some
-# driver-side code paths can produce transient W^X mappings.
-NoNewPrivileges=true
-ProtectSystem=strict
-ProtectHome=read-only
-PrivateTmp=true
-ProtectKernelTunables=true
-ProtectKernelModules=true
-ProtectControlGroups=true
-RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
-RestrictNamespaces=true
-LockPersonality=true
 
 [Install]
 WantedBy=default.target
