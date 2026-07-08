@@ -1,7 +1,7 @@
 # Makefile for the workstation-probe server.
 #
 # Targets:
-#   make build           build the binary into ./monitor (CGO_ENABLED=1)
+#   make build           build the binary into ./workstation-probe (CGO_ENABLED=1)
 #   make build-nvml      build with the NVML collector (requires libnvidia-ml)
 #   make test            run all unit tests with -race
 #   make vet             go vet ./...
@@ -9,8 +9,8 @@
 #   make run             build then run with config.yaml
 #   make tidy            go mod tidy
 #   make install         install binary + systemd service + sample config (sudo)
-#   make start           systemctl enable --now monitor
-#   make stop            systemctl stop monitor
+#   make start           systemctl enable --now workstation-probe
+#   make stop            systemctl stop workstation-probe
 #   make uninstall       disable + remove service and binary
 #   make smoke           run scripts/smoke.sh against an already-running instance
 #   make live-test       full install→start→probe→uninstall cycle (sudo, see scripts/live-test.sh)
@@ -26,10 +26,10 @@
 
 PREFIX      ?= /usr/local
 MONITOR_USER ?= $(shell id -un)
-CONFIG_DIR   ?= /etc/monitor
+CONFIG_DIR   ?= /etc/workstation-probe
 
 GO        ?= go
-BIN        := monitor
+BIN        := workstation-probe
 PKG        := ./cmd/monitor
 NVML_CGO_CFLAGS ?= -Wno-deprecated-declarations
 
@@ -63,20 +63,20 @@ install: build
 	install -m 0755 -D $(BIN) $(PREFIX)/bin/$(BIN)
 	install -m 0755 -d $(CONFIG_DIR)
 	[ -f $(CONFIG_DIR)/config.yaml ] || install -m 0644 config.example.yaml $(CONFIG_DIR)/config.yaml
-	sed 's/@USER@/$(MONITOR_USER)/' contrib/systemd/monitor.service.in > /etc/systemd/system/monitor.service
+	sed 's/@USER@/$(MONITOR_USER)/' contrib/systemd/workstation-probe.service.in > /etc/systemd/system/workstation-probe.service
 	systemctl daemon-reload
 	@echo "Installed: binary=$(PREFIX)/bin/$(BIN), config=$(CONFIG_DIR)/config.yaml, user=$(MONITOR_USER)"
 	@echo "Next: edit $(CONFIG_DIR)/config.yaml (set server.port), then 'sudo make start'"
 
 start:
-	systemctl enable --now monitor
+	systemctl enable --now workstation-probe
 
 stop:
-	systemctl stop monitor
+	systemctl stop workstation-probe
 
 uninstall: stop
-	systemctl disable monitor || true
-	rm -f /etc/systemd/system/monitor.service
+	systemctl disable workstation-probe || true
+	rm -f /etc/systemd/system/workstation-probe.service
 	systemctl daemon-reload
 	rm -f $(PREFIX)/bin/$(BIN)
 	@echo "Uninstalled. $(CONFIG_DIR)/config.yaml preserved."
