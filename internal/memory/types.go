@@ -8,13 +8,11 @@ import "time"
 // underlying gopsutil calls failed; in that case all numeric fields are
 // zero values.
 //
-// UsedBytes is gopsutil's "Total - Free", which INCLUDES buffers and
-// page cache. Most `free -h` style tools report this number. htop's
-// "used" bar shows a different concept — non-reclaimable memory only
-// (Total - Free - Buffers - Cached); that value is exposed as
-// UsedNoCacheBytes so the webview can render an htop-faithful stacked
-// bar where the used / buffers / cached segments add up to ~100% of
-// total without overlap.
+// UsedBytes is gopsutil's human-consumable used memory. On Linux that is
+// Total - Available, not Total - Free. htop's "used" bar shows a narrower
+// concept: Total - Free - Buffers - Cached. That value is exposed as
+// UsedNoCacheBytes so the webview can render the used / buffers / cached
+// segments without double-counting reclaimable cache.
 //
 // The kernel breakdown fields (BuffersBytes / CachedBytes / SharedBytes)
 // are populated on Linux from /proc/meminfo via gopsutil; they are zero on
