@@ -39,6 +39,7 @@ pnpm-debug.log*
 *.tmp
 *.tmp.*
 *.log
+*.pid
 *.bak
 *.swp
 *~
