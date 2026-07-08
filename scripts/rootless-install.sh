@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # scripts/rootless-install.sh — rootless/user install of workstation-probe.
 #
-# Builds the binary, installs to ~/.local/bin/monitor, creates config at
-# ~/.config/monitor/config.yaml, and installs + starts a systemd user service.
+# Builds the binary, installs to ~/.local/bin/workstation-probe, creates config at
+# ~/.config/workstation-probe/config.yaml, and installs + starts a systemd user service.
 # No root required.
 #
 # Usage:
@@ -19,9 +19,9 @@ cd "$HERE"
 # ---------------------------------------------------------------------------
 # Defaults
 # ---------------------------------------------------------------------------
-BIN_NAME="monitor"
+BIN_NAME="workstation-probe"
 INSTALL_BIN="${HOME}/.local/bin/${BIN_NAME}"
-CONFIG_DIR="${HOME}/.config/monitor"
+CONFIG_DIR="${HOME}/.config/workstation-probe"
 CONFIG_FILE="${CONFIG_DIR}/config.yaml"
 SYSTEMD_USER_DIR="${HOME}/.config/systemd/user"
 SERVICE_FILE="${SYSTEMD_USER_DIR}/${BIN_NAME}.service"

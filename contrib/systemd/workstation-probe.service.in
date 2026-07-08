@@ -1,5 +1,5 @@
 [Unit]
-Description=System Load Monitor (CPU/GPU/Memory/Storage)
+Description=Workstation Probe (CPU/GPU/Memory/Storage)
 After=network-online.target
 Wants=network-online.target
 StartLimitIntervalSec=60
@@ -9,7 +9,7 @@ StartLimitBurst=3
 Type=simple
 User=@USER@
 Group=@USER@
-ExecStart=/usr/local/bin/monitor -config /etc/monitor/config.yaml
+ExecStart=/usr/local/bin/workstation-probe -config /etc/workstation-probe/config.yaml
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal

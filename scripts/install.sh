@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # scripts/install.sh — root/system install of workstation-probe.
 #
-# Builds the binary, installs to /usr/local/bin/monitor, creates config at
-# /etc/monitor/config.yaml, and installs + starts a systemd service.
+# Builds the binary, installs to /usr/local/bin/workstation-probe, creates config at
+# /etc/workstation-probe/config.yaml, and installs + starts a systemd service.
 #
 # Usage:
 #   sudo ./scripts/install.sh              # full install + start
@@ -18,12 +18,12 @@ cd "$HERE"
 # ---------------------------------------------------------------------------
 # Defaults
 # ---------------------------------------------------------------------------
-BIN_NAME="monitor"
+BIN_NAME="workstation-probe"
 INSTALL_BIN="/usr/local/bin/${BIN_NAME}"
-CONFIG_DIR="/etc/monitor"
+CONFIG_DIR="/etc/workstation-probe"
 CONFIG_FILE="${CONFIG_DIR}/config.yaml"
 SERVICE_FILE="/etc/systemd/system/${BIN_NAME}.service"
-SERVICE_TEMPLATE="${HERE}/contrib/systemd/monitor.service.in"
+SERVICE_TEMPLATE="${HERE}/contrib/systemd/workstation-probe.service.in"
 CONFIG_EXAMPLE="${HERE}/config.example.yaml"
 MONITOR_USER="root"
 DO_START=1
