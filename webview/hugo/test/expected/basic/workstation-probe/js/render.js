@@ -23,7 +23,8 @@ const STORAGE_SELECTOR = '[data-wsp-storage]';
 const GPU_SELECTOR = '[data-wsp-gpu]';
 const META_TEXT_SELECTOR = '[data-wsp-sub-meta-text]';
 const MODULE_ATTR = 'data-workstation-probe-module';
-const HEADER_FACTS_SELECTOR = '[data-workstation-probe-header-facts]';
+const HEADER_FACT_TIME_SELECTOR = '[data-workstation-probe-header-fact-server-time]';
+const HEADER_FACT_UPTIME_SELECTOR = '[data-workstation-probe-header-fact-uptime]';
 
 export function renderPanel(panel, _cfg, data, profile = null) {
   renderHeaderFacts(panel, data, profile);
@@ -34,21 +35,31 @@ export function renderPanel(panel, _cfg, data, profile = null) {
 }
 
 function renderHeaderFacts(panel, data, profile) {
-  const el = panel.querySelector(HEADER_FACTS_SELECTOR);
-  if (!el) return;
-  const facts = [];
+  const timeEl = panel.querySelector(HEADER_FACT_TIME_SELECTOR);
+  const uptimeEl = panel.querySelector(HEADER_FACT_UPTIME_SELECTOR);
+
+  let timeText = '';
   if (data.server_time_local) {
     const zone = formatServerZone(
       profile?.server_timezone || data.server_timezone,
       profile?.server_timezone_offset_seconds ?? data.server_timezone_offset_seconds,
     );
-    facts.push(zone ? `${data.server_time_local} ${zone}` : data.server_time_local);
+    timeText = zone ? `${data.server_time_local} ${zone}` : data.server_time_local;
   }
+  setHeaderFact(timeEl, timeText);
+
   const uptime = hostUptimeSeconds(data, profile);
-  if (uptime > 0) {
-    facts.push(`up ${formatDuration(uptime)}`);
+  setHeaderFact(uptimeEl, uptime > 0 ? `up ${formatDuration(uptime)}` : '');
+}
+
+function setHeaderFact(el, text) {
+  if (!el) return;
+  el.textContent = text;
+  if (text) {
+    el.removeAttribute('data-wsp-empty');
+  } else {
+    el.setAttribute('data-wsp-empty', 'true');
   }
-  el.textContent = facts.length > 0 ? facts.join(' · ') : '';
 }
 
 function renderSub(sub, mod, data, profile) {
@@ -621,10 +632,11 @@ function renderStorage(sub, _valueEl, metaEl, _canvas, storage) {
 }
 
 // renderStorageRows fills the storage sub-panel's data-wsp-storage
-// element with one row per mount. Each row is a flex container with
-// fixed-width label slots and a flex-1 bar; the bar itself contains a
-// thick coloured "used" segment and a thin grey "free" segment that
-// share the same horizontal extent.
+// element with one row per mount. CSS makes every row participate in
+// one shared grid so alias, path, bar, and size columns align to the
+// widest value in the list. The bar itself contains a thick coloured
+// "used" segment and a thin grey "free" segment that share the same
+// horizontal extent.
 function renderStorageRows(container, disks) {
   const html = disks.map((d) => {
     const pct = clamp(d.used_percent || 0, 0, 100);

@@ -17,9 +17,16 @@ const BOOTED_ATTR = 'data-workstation-probe-booted';
 const CONFIG_ATTR = 'data-workstation-probe-config';
 const REFRESH_SEL = '[data-workstation-probe-refresh]';
 const URI_SEL = '[data-workstation-probe-uri]';
-const HEADER_FACTS_SEL = '[data-workstation-probe-header-facts]';
+const HEADER_SEL = '[data-workstation-probe-header]';
+const HEADER_FACT_SEL = '[data-workstation-probe-header-fact]';
+const HEADER_FACT_URI_SEL = '[data-workstation-probe-header-fact-uri]';
+const HEADER_FACT_TIME_SEL = '[data-workstation-probe-header-fact-server-time]';
+const HEADER_FACT_UPTIME_SEL = '[data-workstation-probe-header-fact-uptime]';
+const HEADER_FACT_PRIORITY_ATTR = 'data-wsp-header-priority';
+const HEADER_FACT_HIDDEN_ATTR = 'data-wsp-header-hidden';
 
 const STALE_MULTIPLIER = 2.5; // panel dims when last fetch is older than refresh * N
+const headerResizeObservers = new WeakMap();
 
 function init() {
   const panels = document.querySelectorAll(`.${PANEL_CLASS}:not([${BOOTED_ATTR}])`);
@@ -42,10 +49,11 @@ function bootOne(panel) {
   // Render the static shell. Inner DOM is rebuilt here so multiple panels
   // on the same page don't interfere with each other.
   panel.innerHTML = `
-    <div class="${PANEL_CLASS}-header">
+    <div class="${PANEL_CLASS}-header" ${HEADER_SEL.replace(/[\[\]]/g, '')}>
       <h3>${escapeHtml(cfg.name || cfg.api)}</h3>
-      <span class="${PANEL_CLASS}-header-uri" ${URI_SEL.replace(/[\[\]]/g, '')}="${escapeHtml(cfg.api || '')}">${escapeHtml(cfg.api || '')}</span>
-      <span class="${PANEL_CLASS}-header-facts" ${HEADER_FACTS_SEL.replace(/[\[\]]/g, '')}>loading</span>
+      <span class="${PANEL_CLASS}-header-fact ${PANEL_CLASS}-header-uri" ${HEADER_FACT_SEL.replace(/[\[\]]/g, '')} ${HEADER_FACT_URI_SEL.replace(/[\[\]]/g, '')} ${HEADER_FACT_PRIORITY_ATTR}="3" ${URI_SEL.replace(/[\[\]]/g, '')}="${escapeHtml(cfg.api || '')}" title="${escapeHtml(cfg.api || '')}">${escapeHtml(cfg.api || '')}</span>
+      <span class="${PANEL_CLASS}-header-fact ${PANEL_CLASS}-header-time" ${HEADER_FACT_SEL.replace(/[\[\]]/g, '')} ${HEADER_FACT_TIME_SEL.replace(/[\[\]]/g, '')} ${HEADER_FACT_PRIORITY_ATTR}="2" data-wsp-empty="true"></span>
+      <span class="${PANEL_CLASS}-header-fact ${PANEL_CLASS}-header-uptime" ${HEADER_FACT_SEL.replace(/[\[\]]/g, '')} ${HEADER_FACT_UPTIME_SEL.replace(/[\[\]]/g, '')} ${HEADER_FACT_PRIORITY_ATTR}="1" data-wsp-empty="true"></span>
       <div class="${PANEL_CLASS}-meta">
         <span class="${STATUS_CLASS}" data-state="connecting">
           <span class="${STATUS_CLASS}-dot" data-workstation-probe-status-dot></span>
@@ -59,6 +67,7 @@ function bootOne(panel) {
       ${(cfg.modules || []).map((m) => renderSubShell(m)).join('')}
     </div>
   `;
+  setupHeaderAutoFit(panel);
 
   // Subscribe once; the poller deduplicates by api+refresh+query.
   subscribe(cfg, (state) => {
@@ -99,7 +108,50 @@ function bootOne(panel) {
     if (state.data) {
       renderPanel(panel, cfg, state.data, state.profile);
     }
+    fitHeaderFacts(panel);
   });
+}
+
+function setupHeaderAutoFit(panel) {
+  const header = panel.querySelector(HEADER_SEL);
+  if (!header) return;
+  const fit = () => fitHeaderFacts(panel);
+  if (typeof ResizeObserver !== 'undefined') {
+    const observer = new ResizeObserver(fit);
+    observer.observe(header);
+    headerResizeObservers.set(panel, observer);
+  } else {
+    window.addEventListener('resize', fit, { passive: true });
+  }
+  window.requestAnimationFrame(fit);
+}
+
+function fitHeaderFacts(panel) {
+  const header = panel.querySelector(HEADER_SEL);
+  if (!header || !header.clientWidth) return;
+
+  const facts = Array.from(header.querySelectorAll(HEADER_FACT_SEL))
+    .filter((el) => el.getAttribute('data-wsp-empty') !== 'true');
+  for (const el of facts) {
+    el.removeAttribute(HEADER_FACT_HIDDEN_ATTR);
+  }
+
+  const hideOrder = facts
+    .slice()
+    .sort((a, b) => headerFactPriority(a) - headerFactPriority(b));
+  for (const el of hideOrder) {
+    if (!headerOverflows(header)) break;
+    el.setAttribute(HEADER_FACT_HIDDEN_ATTR, 'true');
+  }
+}
+
+function headerFactPriority(el) {
+  const n = Number(el.getAttribute(HEADER_FACT_PRIORITY_ATTR));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function headerOverflows(header) {
+  return header.scrollWidth > header.clientWidth + 1;
 }
 
 // renderSubShell produces the per-module shell. Each module picks a

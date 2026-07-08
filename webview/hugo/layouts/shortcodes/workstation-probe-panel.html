@@ -63,10 +63,11 @@
 
 {{- $data := $raw | transform.Unmarshal -}}
 <div class="workstation-probe-panel" data-workstation-probe-config='{{ $data | jsonify }}'>
-  <div class="workstation-probe-panel-header">
+  <div class="workstation-probe-panel-header" data-workstation-probe-header>
     <h3>{{ $data.name | default $data.api }}</h3>
-    <span class="workstation-probe-panel-header-uri" data-workstation-probe-uri="{{ $data.api }}">{{ $data.api }}</span>
-    <span class="workstation-probe-panel-header-facts" data-workstation-probe-header-facts>loading</span>
+    <span class="workstation-probe-panel-header-fact workstation-probe-panel-header-uri" data-workstation-probe-header-fact data-workstation-probe-header-fact-uri data-wsp-header-priority="3" data-workstation-probe-uri="{{ $data.api }}" title="{{ $data.api }}">{{ $data.api }}</span>
+    <span class="workstation-probe-panel-header-fact workstation-probe-panel-header-time" data-workstation-probe-header-fact data-workstation-probe-header-fact-server-time data-wsp-header-priority="2" data-wsp-empty="true"></span>
+    <span class="workstation-probe-panel-header-fact workstation-probe-panel-header-uptime" data-workstation-probe-header-fact data-workstation-probe-header-fact-uptime data-wsp-header-priority="1" data-wsp-empty="true"></span>
     <div class="workstation-probe-panel-meta">
       <span class="workstation-probe-status" data-state="connecting">
         <span class="workstation-probe-status-dot" data-workstation-probe-status-dot></span>
