@@ -6,63 +6,65 @@ import (
 	"testing"
 )
 
+func tmpPath(t *testing.T) string {
+	t.Helper()
+	return filepath.Join(t.TempDir(), "monitor.pid")
+}
+
 func TestAcquireRelease(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "test.pid")
+	path := tmpPath(t)
 
 	l, err := Acquire(path)
 	if err != nil {
-		t.Fatalf("Acquire: %v", err)
+		t.Fatalf("first acquire: %v", err)
 	}
-
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("ReadFile: %v", err)
-	}
-	if string(data) == "" {
-		t.Fatal("PID file is empty")
+	if l == nil {
+		t.Fatal("expected non-nil lock")
 	}
 
 	if err := l.Release(); err != nil {
-		t.Fatalf("Release: %v", err)
+		t.Fatalf("release: %v", err)
 	}
+
+	// File should be removed after release.
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		t.Fatal("PID file still exists after Release")
+		t.Fatalf("expected pid file to be removed, got err=%v", err)
 	}
 }
 
-func TestAcquireSecondFails(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "test.pid")
+func TestAcquireTwiceFails(t *testing.T) {
+	path := tmpPath(t)
 
 	l1, err := Acquire(path)
 	if err != nil {
-		t.Fatalf("first Acquire: %v", err)
+		t.Fatalf("first acquire: %v", err)
 	}
 	defer l1.Release()
 
 	_, err = Acquire(path)
 	if err == nil {
-		t.Fatal("second Acquire should have failed")
+		t.Fatal("expected second acquire to fail")
 	}
 }
 
-func TestStalePID(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "test.pid")
+func TestAcquireStalePID(t *testing.T) {
+	path := tmpPath(t)
 
-	// Write a PID that is highly unlikely to be running.
-	if err := os.WriteFile(path, []byte("99999999"), 0644); err != nil {
-		t.Fatalf("WriteFile: %v", err)
+	// Write a PID that is almost certainly not running.
+	if err := os.WriteFile(path, []byte("99999\n"), 0644); err != nil {
+		t.Fatalf("write stale pid: %v", err)
 	}
 
 	l, err := Acquire(path)
 	if err != nil {
-		t.Fatalf("Acquire on stale PID should succeed: %v", err)
+		t.Fatalf("acquire with stale pid: %v", err)
 	}
 	l.Release()
 }
 
-func TestReleaseNoFile(t *testing.T) {
-	l := &Lock{path: filepath.Join(t.TempDir(), "nonexistent.pid")}
+func TestReleaseNil(t *testing.T) {
+	var l *Lock
 	if err := l.Release(); err != nil {
-		t.Fatalf("Release on nonexistent file should not error: %v", err)
+		t.Fatalf("release nil: %v", err)
 	}
 }

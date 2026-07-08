@@ -5,10 +5,12 @@ on:
     branches:
       - main
       - 'release/**'
+      - 'feat/**'
   pull_request:
     branches:
       - main
       - 'release/**'
+      - 'feat/**'
 
 # Cancel in-progress runs for the same branch when a new commit lands.
 concurrency:

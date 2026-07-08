@@ -36,21 +36,16 @@ func main() {
 }
 
 func run() int {
-	configPath := flag.String("config", "", "path to YAML config file")
+	configPath := flag.String("config", "", "path to YAML config file (required)")
 	pidFile := flag.String("pid-file", "/tmp/monitor.pid", "path to PID lock file")
 	flag.Parse()
 
-	// Acquire single-instance lock before any initialization.
-	lock, err := lock.Acquire(*pidFile)
+	l, err := lock.Acquire(*pidFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "monitor: %v\n", err)
+		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	defer func() {
-		if err := lock.Release(); err != nil {
-			slog.Error("release lock failed", "err", err, "path", *pidFile)
-		}
-	}()
+	defer func() { _ = l.Release() }()
 
 	if *configPath == "" {
 		slog.Error("-config is required")
