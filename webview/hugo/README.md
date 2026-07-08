@@ -1,5 +1,9 @@
 # webview/hugo — Hugo Module
 
+> 📖 **New to workstation-probe?** Follow the [integration guide](../../docs/integrate-with-hugo.md)
+> to add the webview to an existing Hugo blog.
+
+
 A Hugo Module that embeds live `workstation-probe` dashboards inside
 markdown blog posts via the `workstation-probe-panel` shortcode.
 
