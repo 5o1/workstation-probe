@@ -24,6 +24,7 @@ go.work.sum
 build/
 
 # Hugo generated output and caches
+public/
 webview/hugo/exampleSite/*/public/
 webview/hugo/exampleSite/*/resources/
 .hugo_build.lock
