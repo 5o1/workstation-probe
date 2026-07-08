@@ -10,6 +10,8 @@
 #   sudo ./scripts/install.sh --port 9090  # install with custom port
 #   ./scripts/install.sh -h                # show usage
 
+#   sudo ./scripts/install.sh --nvml        # build with NVML GPU support
+#   sudo ./scripts/install.sh --nvml --port 9090
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
@@ -28,6 +30,7 @@ CONFIG_EXAMPLE="${HERE}/config.example.yaml"
 MONITOR_USER="root"
 DO_START=1
 PORT=""
+NVML_BUILD=0
 
 # ---------------------------------------------------------------------------
 # Colors
@@ -53,6 +56,7 @@ Build and install workstation-probe (monitor) as a system service.
 Requires root privileges.
 
 Options:
+  --nvml        Build with NVML GPU collector (requires libnvidia-ml).
   -h            Show this help and exit.
   --port N      Set the server listen port (default: 19090 from config.example.yaml).
   --no-start    Install the binary, config, and service, but do not start the service.
@@ -78,6 +82,7 @@ fi
 while [ $# -gt 0 ]; do
     case "$1" in
         -h) usage ;;
+        --nvml) NVML_BUILD=1 ;;
         --port)
             shift
             if [ $# -eq 0 ]; then
@@ -117,10 +122,15 @@ fi
 
 # ---------------------------------------------------------------------------
 # Build
-# ---------------------------------------------------------------------------
-info "Building binary..."
-if ! make build; then
-    fatal "Build failed. Check the Go toolchain and try again."
+if [ "$NVML_BUILD" -eq 1 ]; then
+    info "Building with NVML GPU support..."
+    if ! make build-nvml; then
+        fatal "Build failed. Check the Go toolchain, libnvidia-ml, and try again."
+    fi
+else
+    if ! make build; then
+        fatal "Build failed. Check the Go toolchain and try again."
+    fi
 fi
 info "Build succeeded."
 
