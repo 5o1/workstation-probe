@@ -45,7 +45,7 @@ func run() int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	defer l.Release()
+	defer func() { _ = l.Release() }()
 
 	if *configPath == "" {
 		slog.Error("-config is required")

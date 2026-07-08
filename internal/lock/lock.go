@@ -33,7 +33,7 @@ func Acquire(path string) (*Lock, error) {
 		// Stale PID or unparseable — overwrite.
 	}
 
-	if err := os.WriteFile(path, []byte(strconv.Itoa(ourPid)+"\n"), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(strconv.Itoa(ourPid)+"\n"), 0o644); err != nil {
 		return nil, fmt.Errorf("write pid file %s: %w", path, err)
 	}
 	return &Lock{path: path}, nil
