@@ -51,6 +51,9 @@ func TestMemory_PublishesSample(t *testing.T) {
 	if p.TotalBytes != 1000 || p.UsedBytes != 400 || p.UsedPercent != 40 {
 		t.Errorf("unexpected sample: %+v", *p)
 	}
+	if p.UsedNoCacheBytes != 400 {
+		t.Errorf("used_no_cache = %d, want 400", p.UsedNoCacheBytes)
+	}
 	if p.SwapTotalBytes != 200 || p.SwapUsedBytes != 50 {
 		t.Errorf("swap fields wrong: %+v", *p)
 	}
@@ -67,6 +70,25 @@ func TestMemory_PublishesSample(t *testing.T) {
 	hist := m.History(5 * time.Second)
 	if len(hist) == 0 {
 		t.Errorf("expected non-empty history")
+	}
+}
+
+func TestMemory_UsedNoCacheDoesNotSubtractCacheFromUsed(t *testing.T) {
+	fc := &fakeCollector{
+		vm: VirtualMemory{
+			TotalBytes:     1000,
+			AvailableBytes: 700,
+			FreeBytes:      100,
+			UsedBytes:      300,
+			UsedPercent:    30,
+			BuffersBytes:   100,
+			CachedBytes:    500,
+		},
+	}
+	m := NewWithCollector(fc, time.Second, 4, newTestLogger())
+	p := m.Latest().(*Sample)
+	if p.UsedNoCacheBytes != 300 {
+		t.Errorf("used_no_cache = %d, want 300", p.UsedNoCacheBytes)
 	}
 }
 
@@ -87,14 +109,14 @@ func TestMemory_PropagatesError(t *testing.T) {
 
 func TestMemory_Peak(t *testing.T) {
 	// Total stays constant at 1000 across the window. The "real used"
-	// (Total - Free - Buffers - Cached) goes 250 → 450 → 150. The peak
-	// should report 450 and a recomputed UsedPercent of 45.
+	// (Total - Free - Buffers - Cached) goes 400 → 600 → 300. The peak
+	// should report 600 and a recomputed UsedPercent of 60.
 	fc := &fakeCollector{
 		sw: SwapMemory{TotalBytes: 200, UsedBytes: 50},
 		seq: []VirtualMemory{
-			{TotalBytes: 1000, UsedBytes: 400, AvailableBytes: 600, UsedPercent: 40, BuffersBytes: 100, CachedBytes: 50},
-			{TotalBytes: 1000, UsedBytes: 600, AvailableBytes: 400, UsedPercent: 60, BuffersBytes: 100, CachedBytes: 50},
-			{TotalBytes: 1000, UsedBytes: 300, AvailableBytes: 700, UsedPercent: 30, BuffersBytes: 100, CachedBytes: 50},
+			{TotalBytes: 1000, UsedBytes: 400, AvailableBytes: 600, FreeBytes: 500, UsedPercent: 40, BuffersBytes: 50, CachedBytes: 50},
+			{TotalBytes: 1000, UsedBytes: 600, AvailableBytes: 400, FreeBytes: 300, UsedPercent: 60, BuffersBytes: 50, CachedBytes: 50},
+			{TotalBytes: 1000, UsedBytes: 300, AvailableBytes: 700, FreeBytes: 600, UsedPercent: 30, BuffersBytes: 50, CachedBytes: 50},
 		},
 	}
 	m := NewWithCollector(fc, 30*time.Millisecond, 8, newTestLogger())
@@ -108,13 +130,13 @@ func TestMemory_Peak(t *testing.T) {
 		t.Fatal("expected non-nil peak")
 	}
 	p := peak.(*Sample)
-	if p.UsedNoCacheBytes != 450 {
-		t.Errorf("peak used_no_cache = %d, want 450", p.UsedNoCacheBytes)
+	if p.UsedNoCacheBytes != 600 {
+		t.Errorf("peak used_no_cache = %d, want 600", p.UsedNoCacheBytes)
 	}
 	// UsedPercent is recomputed from the peaked used_no_cache, not taken
 	// from any one sample.
-	if p.UsedPercent != 45 {
-		t.Errorf("peak used_percent = %f, want 45", p.UsedPercent)
+	if p.UsedPercent != 60 {
+		t.Errorf("peak used_percent = %f, want 60", p.UsedPercent)
 	}
 	// Non-stress fields come from the latest in-window sample (300 used).
 	if p.UsedBytes != 300 {

@@ -46,24 +46,28 @@ func captureProfile(c Collector) ProfileInfo {
 	return ProfileInfo{TotalBytes: vm.TotalBytes}
 }
 
-	// Name returns "memory".
-func (m *Module) Name() string                     { return "memory" }
-	// Enabled reports that the memory module is always active.
-func (m *Module) Enabled() bool                    { return true }
-	// DisabledReason returns ""; the memory module is never disabled.
-func (m *Module) DisabledReason() string           { return "" }
-	// Profile returns the static metadata captured at startup.
-func (m *Module) Profile() any                     { return m.profile }
-	// Shutdown is a no-op; memory does not hold external resources.
+// Name returns "memory".
+func (m *Module) Name() string { return "memory" }
+
+// Enabled reports that the memory module is always active.
+func (m *Module) Enabled() bool { return true }
+
+// DisabledReason returns ""; the memory module is never disabled.
+func (m *Module) DisabledReason() string { return "" }
+
+// Profile returns the static metadata captured at startup.
+func (m *Module) Profile() any { return m.profile }
+
+// Shutdown is a no-op; memory does not hold external resources.
 func (m *Module) Shutdown(_ context.Context) error { return nil }
 
-	// Start launches the sampling goroutine and returns immediately.
+// Start launches the sampling goroutine and returns immediately.
 func (m *Module) Start(ctx context.Context) error {
 	go metrics.RunLoop(ctx, m.base.Interval, m.collectOnce)
 	return nil
 }
 
-	// Latest returns the most recent sample or nil.
+// Latest returns the most recent sample or nil.
 func (m *Module) Latest() any {
 	if m.base == nil {
 		return nil
@@ -71,7 +75,7 @@ func (m *Module) Latest() any {
 	return m.base.Latest()
 }
 
-	// History returns samples within the trailing duration d, oldest first.
+// History returns samples within the trailing duration d, oldest first.
 func (m *Module) History(d time.Duration) []any {
 	if m.base == nil {
 		return nil
@@ -120,7 +124,7 @@ func (m *Module) Peak(d time.Duration) any {
 	return peak
 }
 
-	// LastSampleAge returns the time since the most recent sample.
+// LastSampleAge returns the time since the most recent sample.
 func (m *Module) LastSampleAge() time.Duration {
 	if m.base == nil {
 		return time.Duration(1<<63 - 1)
@@ -128,7 +132,7 @@ func (m *Module) LastSampleAge() time.Duration {
 	return m.base.LastSampleAge()
 }
 
-	// RegisterRoutes adds /metrics/memory and /metrics/memory/history to mux.
+// RegisterRoutes adds /metrics/memory and /metrics/memory/history to mux.
 func (m *Module) RegisterRoutes(mux *http.ServeMux) {
 	metrics.RegisterRoutes(mux, m.base, "memory", m.base.Latest, m.History, nil)
 }
@@ -139,15 +143,11 @@ func (m *Module) collectOnce() {
 		m.base.Publish(Sample{Timestamp: nowUTC(), Error: err.Error()})
 		return
 	}
-	// htop's "used" excludes reclaimable buffers and page cache. Match
-	// that here so the webview's stacked bar segments add up to ~100%
-	// of total without overlap. Saturating subtraction would be wrong
-	// on non-Linux platforms where the kernel fields are zero; the
-	// conditional guards against that.
-	var usedNoCache uint64
-	if vm.BuffersBytes+vm.CachedBytes < vm.UsedBytes {
-		usedNoCache = vm.UsedBytes - vm.BuffersBytes - vm.CachedBytes
-	}
+	// Compute the htop-style "used" segment from raw meminfo fields when
+	// available. Do not subtract Buffers/Cached from gopsutil Used; on Linux
+	// Used is already derived from availability, so that double subtraction
+	// collapses the webview value to 0 on hosts with large page cache.
+	usedNoCache := usedWithoutReclaimable(vm)
 	m.base.Publish(Sample{
 		Timestamp:        nowUTC(),
 		TotalBytes:       vm.TotalBytes,
@@ -161,4 +161,20 @@ func (m *Module) collectOnce() {
 		CachedBytes:      vm.CachedBytes,
 		SharedBytes:      vm.SharedBytes,
 	})
+}
+
+func usedWithoutReclaimable(vm VirtualMemory) uint64 {
+	if vm.TotalBytes > 0 && vm.FreeBytes > 0 && vm.FreeBytes <= vm.TotalBytes {
+		used := vm.TotalBytes - vm.FreeBytes
+		if vm.BuffersBytes <= used {
+			used -= vm.BuffersBytes
+			if vm.CachedBytes <= used {
+				return used - vm.CachedBytes
+			}
+		}
+	}
+	if vm.TotalBytes > 0 && vm.AvailableBytes > 0 && vm.AvailableBytes <= vm.TotalBytes {
+		return vm.TotalBytes - vm.AvailableBytes
+	}
+	return vm.UsedBytes
 }

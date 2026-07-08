@@ -14,6 +14,7 @@ import (
 type VirtualMemory struct {
 	TotalBytes     uint64
 	AvailableBytes uint64
+	FreeBytes      uint64
 	UsedBytes      uint64
 	UsedPercent    float64
 	BuffersBytes   uint64
@@ -51,6 +52,7 @@ func (gopsutilCollector) Collect() (VirtualMemory, SwapMemory, error) {
 	return VirtualMemory{
 			TotalBytes:     vm.Total,
 			AvailableBytes: vm.Available,
+			FreeBytes:      vm.Free,
 			UsedBytes:      vm.Used,
 			UsedPercent:    vm.UsedPercent,
 			BuffersBytes:   vm.Buffers,
