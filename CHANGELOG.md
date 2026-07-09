@@ -26,7 +26,7 @@ breaking changes between `0.x` releases are expected.
 - CORS origin parser with allow / deny / preflight middleware.
 - Request-id, access-log, recovery, and token-bucket rate-limit middleware.
 - Hugo webview module with snapshot test fixture.
-- `contrib/systemd` unit for installing monitor as a service.
+- `contrib/systemd` unit for installing workstation-probe as a service.
 
 ### Changed
 

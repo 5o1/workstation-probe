@@ -3,6 +3,6 @@
 # languages, etc. in their own hugo.yaml.
 
 name: workstation-probe-hugo
-description: Embed live workstation-probe dashboards in Hugo markdown via the `panel` shortcode.
+description: Embed live workstation-probe dashboards in Hugo markdown via the `workstation-probe-panel` shortcode.
 license: MIT
 minimumHugoVersion: 0.158.0

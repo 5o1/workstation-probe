@@ -7,6 +7,8 @@ config.yaml
 # Go build outputs and test artifacts
 /monitor
 /monitor.race
+/workstation-probe
+/workstation-probe.race
 *.exe
 *.exe~
 *.dll

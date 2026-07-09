@@ -52,7 +52,7 @@ usage() {
     cat <<EOF
 Usage: sudo $0 [OPTIONS]
 
-Build and install workstation-probe (monitor) as a system service.
+Build and install workstation-probe as a system service.
 Requires root privileges.
 
 Options:

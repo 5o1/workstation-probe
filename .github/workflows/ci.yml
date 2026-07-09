@@ -99,9 +99,9 @@ jobs:
         run: ./webview/hugo/test/run.sh
 
   # ---------------------------------------------------------------------
-  # Stability: only required on the active release branch. Mirrors
+  # Stability: only required on release branches. Mirrors
   # scripts/stability-check.sh but capped to a few minutes so CI stays
-  # affordable. The real soak is driven manually per docs/STABILITY.md.
+  # affordable. Longer manual runs are documented in docs/STABILITY.md.
   # ---------------------------------------------------------------------
   stability:
     name: stability smoke
@@ -116,7 +116,7 @@ jobs:
           cache: true
 
       - name: Build (race)
-        run: CGO_ENABLED=1 go build -race -o monitor ./cmd/monitor
+        run: CGO_ENABLED=1 go build -race -o workstation-probe ./cmd/monitor
 
       - name: Run short soak
         env:

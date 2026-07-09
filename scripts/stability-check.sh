@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# stability-check.sh — drives a long-running soak of the monitor binary
-# and validates the acceptance criteria in docs/STABILITY.md.
+# stability-check.sh — drives a short or long soak of a workstation-probe
+# binary and records request-health artifacts.
 #
 # Usage: STABILITY_DURATION=5m MODE=direct ./scripts/stability-check.sh
 #
 # Environment:
 #   STABILITY_DURATION  total run time (default: 5m). Accepts Go duration.
 #   MODE                direct | systemd (default: direct)
-#   MONITOR_BIN         path to monitor binary (default: ./monitor)
+#   MONITOR_BIN         path to server binary (default: ./workstation-probe)
 #   MONITOR_PORT        port to probe (default: 19090)
 #   RACE_BUILD          1 = rebuild with -race before running (default: 0)
 #   ARTIFACT_DIR        where to write logs (default: build/stability/<ts>/)
@@ -16,7 +16,7 @@ set -euo pipefail
 
 DURATION="${STABILITY_DURATION:-5m}"
 MODE="${MODE:-direct}"
-BIN="${MONITOR_BIN:-./monitor}"
+BIN="${MONITOR_BIN:-./workstation-probe}"
 PORT="${MONITOR_PORT:-19090}"
 RACE_BUILD="${RACE_BUILD:-0}"
 
@@ -41,12 +41,12 @@ echo
 build() {
   if [ "$RACE_BUILD" = "1" ]; then
     echo ">> rebuilding with -race"
-    CGO_ENABLED=1 go build -race -o monitor.race ./cmd/monitor
-    BIN=./monitor.race
+    CGO_ENABLED=1 go build -race -o workstation-probe.race ./cmd/monitor
+    BIN=./workstation-probe.race
   else
     if [ ! -x "$BIN" ]; then
-      echo ">> building monitor"
-      CGO_ENABLED=1 go build -o monitor ./cmd/monitor
+      echo ">> building workstation-probe"
+      CGO_ENABLED=1 go build -o workstation-probe ./cmd/monitor
     fi
   fi
 }
@@ -59,11 +59,11 @@ server:
   host: 127.0.0.1
   port: $PORT
 YAML
-      "$BIN" -config "$ARTIFACT_DIR/config.yaml" >"$ARTIFACT_DIR/monitor.log" 2>&1 &
-      echo $! >"$ARTIFACT_DIR/monitor.pid"
+      "$BIN" -config "$ARTIFACT_DIR/config.yaml" >"$ARTIFACT_DIR/workstation-probe.log" 2>&1 &
+      echo $! >"$ARTIFACT_DIR/workstation-probe.pid"
       ;;
     systemd)
-      sudo systemctl restart monitor
+      sudo systemctl restart workstation-probe
       ;;
     *)
       echo "unknown MODE=$MODE" >&2
@@ -75,14 +75,14 @@ YAML
 stop_monitor() {
   case "$MODE" in
     direct)
-      if [ -f "$ARTIFACT_DIR/monitor.pid" ]; then
-        pid=$(cat "$ARTIFACT_DIR/monitor.pid")
+      if [ -f "$ARTIFACT_DIR/workstation-probe.pid" ]; then
+        pid=$(cat "$ARTIFACT_DIR/workstation-probe.pid")
         kill "$pid" 2>/dev/null || true
         wait "$pid" 2>/dev/null || true
       fi
       ;;
     systemd)
-      sudo systemctl stop monitor
+      sudo systemctl stop workstation-probe
       ;;
   esac
 }
@@ -131,7 +131,7 @@ if [[ "$DURATION" == *m ]]; then
   mins="${DURATION%m}"
   if [ -n "$mins" ] && [ "$mins" -ge 2 ] 2>/dev/null; then
     half=$((mins / 2))
-    ( sleep "${half}m"; kill -HUP "$(cat "$ARTIFACT_DIR/monitor.pid" 2>/dev/null)" 2>/dev/null ) &
+    ( sleep "${half}m"; kill -HUP "$(cat "$ARTIFACT_DIR/workstation-probe.pid" 2>/dev/null)" 2>/dev/null ) &
   fi
 fi
 

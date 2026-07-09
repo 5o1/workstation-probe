@@ -52,7 +52,7 @@ usage() {
     cat <<EOF
 Usage: $0 [OPTIONS]
 
-Build and install workstation-probe (monitor) as a user service (rootless).
+Build and install workstation-probe as a user service (rootless).
 No root privileges required.
 
 Options:
@@ -167,7 +167,7 @@ info "Creating systemd user service at ${SERVICE_FILE}..."
 mkdir -p "${SYSTEMD_USER_DIR}"
 cat > "${SERVICE_FILE}" <<SERVICEEOF
 [Unit]
-Description=System Load Monitor (CPU/GPU/Memory/Storage) — User
+Description=Workstation Probe (CPU/GPU/Memory/Storage) — User
 After=network-online.target
 Wants=network-online.target
 StartLimitIntervalSec=60
