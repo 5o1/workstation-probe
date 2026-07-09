@@ -6,10 +6,10 @@ copying, no manual file management. Hugo handles versioning and updates.
 
 ## Prerequisites
 
-- **Hugo** extended ≥ 0.163.3 (`hugo version`)
+- **Hugo** ≥ 0.158.0 (`hugo version`)
 - **Go** ≥ 1.21 (required by Hugo's module system; `go version`)
 - An existing Hugo blog with a `go.mod` file (run `hugo mod init` if missing)
-- A running `workstation-probe` monitor instance (see the project README)
+- A running `workstation-probe` server instance (see the project README)
 
 ## Step 1: Add the Hugo Module
 
@@ -69,8 +69,7 @@ partial before the closing `</body>` tag:
 </body>
 ```
 
-If you don't have a `baseof.html` yet, copy the minimal example from the
-module:
+If you don't have a `baseof.html` yet, start from your theme's base template:
 
 ```bash
 cp themes/your-theme/layouts/_default/baseof.html layouts/_default/baseof.html
@@ -96,7 +95,7 @@ modules:
 ```
 
 - `name` — displayed in the panel header
-- `api` — the monitor server base URL (no trailing slash)
+- `api` — the `workstation-probe` server base URL (no trailing slash)
 - `refresh` — poll interval as a Go duration string (`5s`, `10s`, `30s`, `1m`)
 - `modules` — which metric panels to show (one or more of: `cpu`, `memory`, `gpu`, `storage`)
 
@@ -144,12 +143,12 @@ hugo server
 ```
 
 Visit `http://localhost:1313` and navigate to the page with the shortcode.
-You should see a live metrics panel with charts pulling data from the monitor.
+You should see a live metrics panel rendering data from the server.
 
 ## CORS configuration
 
-If your Hugo dev server and the monitor run on different ports (the default
-setup), you need CORS enabled on the monitor. Edit the monitor's `config.yaml`:
+If your Hugo dev server and the `workstation-probe` server run on different
+ports, enable CORS in the server's `config.yaml`:
 
 ```yaml
 security:
@@ -159,8 +158,8 @@ security:
       - http://localhost:1313
 ```
 
-For production, if Hugo and the monitor are served behind the same reverse
-proxy (nginx, Caddy), CORS is unnecessary.
+For production, if Hugo and the `workstation-probe` server are served behind
+the same reverse proxy (nginx, Caddy), CORS is unnecessary.
 
 ## Troubleshooting
 
@@ -198,8 +197,8 @@ refresh: "5s"
 
 ### "CORS error" or "Failed to fetch" in browser console
 
-The browser is blocking cross-origin requests. Enable CORS on the monitor
-(see the CORS section above), or serve both the site and the monitor from
+The browser is blocking cross-origin requests. Enable CORS on the server
+(see the CORS section above), or serve both the site and the server from
 the same origin.
 
 ### "Chart.js is not defined" or blank panel
@@ -212,7 +211,7 @@ intranet without internet access, self-host Chart.js. Download
 
 ### Tests fail with "Hugo version mismatch"
 
-The module requires Hugo extended ≥ 0.163.3. Check your Hugo version:
+The module requires Hugo ≥ 0.158.0. Check your Hugo version:
 
 ```bash
 hugo version

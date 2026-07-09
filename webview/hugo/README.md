@@ -27,7 +27,7 @@ It does **not** ship a `content/` or `configs/` directory; those are the
 caller's responsibility.
 
 For local development of this module itself, see
-[`../exampleSite/basic/`](../../exampleSite/basic/). The same site is
+[`exampleSite/basic/`](exampleSite/basic/). The same site is
 also the snapshot-test target — see `test/README.md`.
 
 ## Namespace
@@ -74,7 +74,7 @@ site-wide scripts), include the panel frontend:
 {{ partial "workstation-probe/scripts.html" . }}
 ```
 
-For a starting `baseof.html`, copy from `../../exampleSite/basic/layouts/_default/baseof.html`.
+For a starting `baseof.html`, copy from `exampleSite/basic/layouts/_default/baseof.html`.
 
 ## Usage
 
@@ -110,10 +110,10 @@ content/posts/other.md                  ← plain file
 
 ```yaml
 # in any of: page resource, configs/<name>.yaml
-name: rig-01                # shown in the panel header
-api: "http://localhost:19090" # monitor base URL (no trailing slash)
-refresh: "5s"               # poll interval — Go duration: 500ms, 5s, 2m
-modules:                    # which sub-panels to render
+name: rig-01                  # shown in the panel header
+api: "http://localhost:19090" # workstation-probe server base URL (no trailing slash)
+refresh: "5s"                 # poll interval — Go duration: 500ms, 5s, 2m
+modules:                      # which sub-panels to render
   - cpu
   - memory
   - gpu
@@ -132,9 +132,9 @@ Same for URLs with colons.
 ## CORS
 
 `workstation-probe`'s default config does not enable CORS. When this site
-runs on a different origin than the monitor (e.g. dev server on
-`http://localhost:1313` and monitor on `http://localhost:19090`), configure
-the monitor's CORS section:
+runs on a different origin than the `workstation-probe` server (e.g. dev
+server on `http://localhost:1313` and the API on `http://localhost:19090`),
+configure the server's CORS section:
 
 ```yaml
 security:
@@ -145,19 +145,7 @@ security:
 ```
 
 For a single-origin deploy (Hugo served behind the same reverse proxy as
-the monitor), this is unnecessary.
-
-## Intranet NAS mirror
-
-For a public GitHub Pages blog plus a LAN-only live dashboard, do not embed
-the panel on the public page. Link from the public page to a NAS-hosted Hugo
-mirror, then render `workstation-probe-panel` only on the NAS page. This keeps
-the browser from fetching private HTTP APIs from a public HTTPS origin.
-
-The repository includes `nas-overlay.example/`, a template for the private
-NAS overlay that adds an intranet monitor article and per-workstation YAML
-configs. The full deployment model is documented in
-`../../docs/intranet-mirror.md`.
+the `workstation-probe` server), this is unnecessary.
 
 ## Architecture
 

@@ -4,7 +4,7 @@
 #
 # Runs in one of two modes, chosen automatically:
 #   • systemd mode (preferred): installs to /usr/local/bin and uses a
-#     uniquely-named systemd unit (monitor-live-test.service). Requires
+#     uniquely-named systemd unit (workstation-probe-live-test.service). Requires
 #     passwordless sudo for install/uninstall and systemd.
 #   • direct mode (fallback): installs to $HOME/.local/bin and runs the
 #     binary directly in the background. No sudo needed; systemd not used.
@@ -22,9 +22,9 @@ set -u
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PORT="${PORT:-18080}"
 MODE_OVERRIDE="${MODE:-}"
-SERVICE="monitor-live-test"
-SERVICE_TEMPLATE="${REPO_ROOT}/contrib/systemd/monitor.service.in"
-BIN_SRC="${REPO_ROOT}/monitor"
+SERVICE="workstation-probe-live-test"
+SERVICE_TEMPLATE="${REPO_ROOT}/contrib/systemd/workstation-probe.service.in"
+BIN_SRC="${REPO_ROOT}/workstation-probe"
 LOG_PREFIX="[live-test]"
 
 # State set once we know which mode we're in.
@@ -53,7 +53,7 @@ fi
 case "$MODE" in
     systemd)
         BIN_DEST="/usr/local/bin/${SERVICE}"
-        CONFIG_FILE="/etc/monitor-live-test/config.yaml"
+        CONFIG_FILE="/etc/workstation-probe-live-test/config.yaml"
         SERVICE_FILE="/etc/systemd/system/${SERVICE}.service"
         PID_FILE="/var/run/${SERVICE}.pid"
         SUDO="sudo"
@@ -61,9 +61,9 @@ case "$MODE" in
     direct)
         PREFIX="${HOME}/.local"
         BIN_DEST="${PREFIX}/bin/${SERVICE}"
-        CONFIG_DIR="${PREFIX}/share/monitor-live-test"
+        CONFIG_DIR="${PREFIX}/share/workstation-probe-live-test"
         CONFIG_FILE="${CONFIG_DIR}/config.yaml"
-        PID_FILE="${CONFIG_DIR}/monitor.pid"
+        PID_FILE="${CONFIG_DIR}/workstation-probe.pid"
         SUDO=""
         ;;
     *)
@@ -83,7 +83,7 @@ cleanup() {
             sudo systemctl disable "${SERVICE}.service" 2>/dev/null
             sudo rm -f "${SERVICE_FILE}"
             sudo systemctl daemon-reload 2>/dev/null
-            sudo rm -rf "/etc/monitor-live-test"
+            sudo rm -rf "/etc/workstation-probe-live-test"
             sudo rm -f "${BIN_DEST}"
             sudo pkill -f "${BIN_DEST}" 2>/dev/null
             ;;
@@ -163,8 +163,8 @@ logging:
 EOF
         echo "$LOG_PREFIX Rendering ${SERVICE_FILE}"
         ${SUDO} sed -e "s/@USER@/${USER:-$(id -un)}/g" \
-                    -e "s|/usr/local/bin/monitor|${BIN_DEST}|g" \
-                    -e "s|/etc/monitor/config.yaml|${CONFIG_FILE}|g" \
+                    -e "s|/usr/local/bin/workstation-probe|${BIN_DEST}|g" \
+                    -e "s|/etc/workstation-probe/config.yaml|${CONFIG_FILE}|g" \
                     "${SERVICE_TEMPLATE}" | ${SUDO} tee "${SERVICE_FILE}" >/dev/null
         ${SUDO} systemctl daemon-reload
         ${SUDO} systemctl enable --now "${SERVICE}.service"

@@ -13,7 +13,8 @@
 #   REFRESH          - sampler interval as Go duration (default: 1s)
 #   GPU              - GPU build mode: auto, nvml, or stub (default: auto)
 #                      auto uses NVML when libnvidia-ml is available, otherwise stub
-#   REBUILD          - rebuild ./monitor before starting: 1 or 0 (default: 1)
+#   REBUILD          - rebuild the local development binary before starting:
+#                      1 or 0 (default: 1)
 
 set -euo pipefail
 
@@ -27,7 +28,7 @@ REFRESH="${REFRESH:-1s}"
 GPU="${GPU:-auto}"
 REBUILD="${REBUILD:-1}"
 CONFIG="/tmp/workstation-probe-dev-config.yaml"
-BIN="$HERE/monitor"
+BIN="$HERE/workstation-probe"
 
 cleanup() {
   rm -f "$CONFIG"
@@ -52,7 +53,7 @@ build_monitor() {
   case "$GPU" in
     auto)
       if nvml_library_available; then
-        echo ">> building monitor with NVML support (GPU=auto)"
+        echo ">> building workstation-probe with NVML support (GPU=auto)"
         if make build-nvml; then
           echo "   gpu build  : nvml"
           return 0
@@ -65,12 +66,12 @@ build_monitor() {
       echo "   gpu build  : stub"
       ;;
     nvml|1|true|yes)
-      echo ">> building monitor with NVML support (GPU=${GPU})"
+      echo ">> building workstation-probe with NVML support (GPU=${GPU})"
       make build-nvml
       echo "   gpu build  : nvml"
       ;;
     stub|0|false|no)
-      echo ">> building monitor with stub GPU collector (GPU=${GPU})"
+      echo ">> building workstation-probe with stub GPU collector (GPU=${GPU})"
       make build
       echo "   gpu build  : stub"
       ;;
@@ -139,7 +140,7 @@ EOF
 
 if [ "$REBUILD" = "0" ]; then
   if [ ! -x "$BIN" ]; then
-    echo ">> ERROR: monitor binary not found and REBUILD=0" >&2
+    echo ">> ERROR: development binary not found and REBUILD=0" >&2
     echo "   run without REBUILD=0, or build manually with 'make build-nvml'" >&2
     exit 1
   fi

@@ -7,20 +7,90 @@ mount tables).
 
 ## Quick start
 
+### Method 1: run in the foreground
+
 ```bash
 # 1. Build
-make build              # CGO_ENABLED=1, stub GPU collector
-make build-nvml         # adds real NVML support (requires libnvidia-ml)
+make build              # portable build with the stub GPU collector
+# or, on NVIDIA hosts with libnvidia-ml:
+# make build-nvml
 
 # 2. Configure
 cp config.example.yaml config.yaml
 $EDITOR config.yaml     # set server.port, optionally tweak mount_points
 
 # 3. Run
-./monitor -config config.yaml
+./workstation-probe -config config.yaml
 
 # 4. Smoke test (in another shell)
 ./scripts/smoke.sh http://localhost:19090
+```
+
+### Method 2: install as a systemd service
+
+Use the install scripts when you want `workstation-probe` managed by
+systemd instead of running in the foreground.
+
+For a root/system install:
+
+```bash
+sudo ./scripts/install.sh
+
+# Optional variants:
+# sudo ./scripts/install.sh --no-start        # install without starting it
+# sudo ./scripts/install.sh --port 9090       # set server.port when creating a new config
+# sudo ./scripts/install.sh --nvml            # build with NVML GPU support
+# sudo ./scripts/install.sh --nvml --port 9090
+```
+
+This installs the binary under `/usr/local/bin/`, creates
+`/etc/workstation-probe/config.yaml` if it is missing, and writes the
+system service to `/etc/systemd/system/workstation-probe.service`.
+
+Useful service commands:
+
+```bash
+systemctl status workstation-probe
+journalctl -u workstation-probe -f
+
+# Stop or restart:
+# sudo systemctl stop workstation-probe
+# sudo systemctl restart workstation-probe
+
+# Uninstall:
+# sudo make uninstall      # removes binary + system service; keeps /etc/workstation-probe/config.yaml
+```
+
+For a rootless user service:
+
+```bash
+./scripts/rootless-install.sh
+
+# Optional variants:
+# ./scripts/rootless-install.sh --no-start        # install without starting it
+# ./scripts/rootless-install.sh --port 9090       # set server.port when creating a new config
+# ./scripts/rootless-install.sh --nvml            # build with NVML GPU support
+# ./scripts/rootless-install.sh --nvml --port 9090
+```
+
+This installs the binary under `~/.local/bin/`, creates
+`~/.config/workstation-probe/config.yaml` if it is missing, and writes
+the user service to `~/.config/systemd/user/workstation-probe.service`.
+
+Useful user-service commands:
+
+```bash
+systemctl --user status workstation-probe
+journalctl --user -u workstation-probe -f
+
+# Stop or restart:
+# systemctl --user stop workstation-probe
+# systemctl --user restart workstation-probe
+
+# Uninstall:
+# systemctl --user disable --now workstation-probe
+# rm -f ~/.config/systemd/user/workstation-probe.service ~/.local/bin/workstation-probe
+# systemctl --user daemon-reload
 ```
 
 ## Endpoints
@@ -81,36 +151,22 @@ name: rig-02
 api: "http://rig-02.lan:19090"
 refresh: "5s"
 mode: peak
-window: 5s
+window: "5s"
 modules: [cpu, memory, gpu, storage]
 ```
 
 The `gpu` key is absent when the module is disabled.
 
-### GPU utilization and webview cell status
+### GPU fields
 
 When NVML is available, each `gpu.devices[*]` entry carries
 `utilization_gpu_percent`, the GPU core utilization reported by NVML
-over its most recent sampling period. The webview renders that value as
-the first stat row in each GPU card.
+over its most recent sampling period.
 
 Each entry may also carry `power_limit_watts` (the current power
 management limit, in W, from `GetPowerManagementLimit`). Consumer
 GeForce cards commonly return `NVML_ERROR_NOT_SUPPORTED`; in that case
 the field is omitted.
-
-The webview uses GPU utilization together with `memory_used_bytes /
-memory_total_bytes` and `power_draw_watts / power_limit_watts` to colour
-each per-GPU cell background — see
-`webview/hugo/static/workstation-probe/js/render.js::gpuStatusPercent`
-and `gpuStatus`. Thresholds:
-
-- `< 10%` → **idle** (green tint)
-- `10-60%` → **working** (amber tint)
-- `≥ 60%` → **busy** (red tint)
-
-Where "the percentage" is
-`max(gpu_util_pct, memory_occupancy_pct, power_draw_pct)`.
 
 ### Error semantics
 
@@ -120,7 +176,9 @@ clients should treat them as "unknown" rather than "really zero".
 
 ## Configuration
 
-`config.yaml` (YAML). Every field has a default except `server.port`.
+`config.yaml` (YAML). `server.port` is required. Most other fields have
+defaults; when storage is enabled, `modules.storage.mount_points` must
+contain at least one real mount point.
 
 ```yaml
 server:
@@ -156,43 +214,24 @@ logging:
   format: json
 ```
 
-## systemd installation
+## systemd hardening
 
-```bash
-sudo make install                  # uses MONITOR_USER=$(id -un) by default
-sudo MONITOR_USER=alice make install
-sudo $EDITOR /etc/monitor/config.yaml    # set server.port; set server.host only if exposing beyond localhost
-sudo make start                    # systemctl enable --now monitor
-systemctl status monitor
-sudo make stop
-sudo make uninstall
-```
+For the root/system install, `scripts/install.sh` writes
+`/etc/systemd/system/workstation-probe.service` from
+`contrib/systemd/workstation-probe.service.in`. That template enables a
+full systemd sandbox (`NoNewPrivileges`, `ProtectSystem=strict`,
+`ProtectHome`, `RestrictAddressFamilies`, `RestrictNamespaces`,
+`PrivateTmp`, etc.). The only flag deliberately omitted is
+`MemoryDenyWriteExecute` because NVML's driver-side code can produce
+transient W^X mappings on some hosts.
 
-The `make install` target performs:
+The rootless installer writes a separate user service and does not include
+those sandboxing directives.
 
-1. Copies `./monitor` to `/usr/local/bin/monitor` (mode 0755).
-2. Creates `/etc/monitor/` and copies `config.example.yaml` to
-   `/etc/monitor/config.yaml` if it does not already exist.
-3. Renders `contrib/systemd/monitor.service.in` into
-   `/etc/systemd/system/monitor.service` after substituting `@USER@` with
-   the value of `MONITOR_USER` (default: the current user).
-4. Runs `systemctl daemon-reload`.
-
-`make uninstall` removes the binary and the service file but keeps
-`/etc/monitor/config.yaml` so a subsequent install keeps the user's config.
-
-### Hardening
-
-The shipped `monitor.service.in` already enables a full systemd
-sandbox (`NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome`,
-`RestrictAddressFamilies`, `RestrictNamespaces`, `PrivateTmp`, etc.,
-see `contrib/systemd/monitor.service.in`). The only flag deliberately
-omitted is `MemoryDenyWriteExecute` because NVML's driver-side code
-can produce transient W^X mappings on some hosts.
-
-If you need to relax a directive (e.g. to allow a non-standard config
-path), edit `/etc/systemd/system/monitor.service` after `make install`,
-then `sudo systemctl daemon-reload && sudo systemctl restart monitor`.
+If you need to relax a directive for the root/system service (e.g. to allow
+a non-standard config path), edit
+`/etc/systemd/system/workstation-probe.service` after installation, then
+`sudo systemctl daemon-reload && sudo systemctl restart workstation-probe`.
 
 ## Deployment with TLS
 
@@ -206,17 +245,17 @@ intentionally want the probe reachable directly from other machines.
 ```nginx
 server {
     listen 443 ssl http2;
-    server_name monitor.internal.example.com;
+    server_name workstation-probe.internal.example.com;
 
-    ssl_certificate     /etc/nginx/ssl/monitor.crt;
-    ssl_certificate_key /etc/nginx/ssl/monitor.key;
+    ssl_certificate     /etc/nginx/ssl/workstation-probe.crt;
+    ssl_certificate_key /etc/nginx/ssl/workstation-probe.key;
 
     # pass client IP for the rate limiter (trust_proxy_headers must be true)
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Real-IP       $remote_addr;
 
     # optional: basic auth (or replace with your auth mechanism)
-    auth_basic           "monitor";
+    auth_basic           "workstation-probe";
     auth_basic_user_file /etc/nginx/.htpasswd;
 
     location / {
@@ -235,16 +274,6 @@ forge the header to bypass per-IP limits.
 CORS, rate limiting and basic auth are **not** authentication. They are
 mitigations; deploy them as defense-in-depth, not as the sole access
 control.
-
-## Intranet NAS mirror
-
-For a zero-budget lab dashboard, keep the public Hugo blog on GitHub Pages
-and serve the live workstation page from an intranet NAS mirror. The public
-site should use a normal link to the NAS page; it should not iframe or fetch
-LAN-only HTTP APIs from GitHub Pages.
-
-See `docs/intranet-mirror.md` and
-`webview/hugo/nas-overlay.example/` for the overlay layout and CORS rules.
 
 ## Architecture
 
@@ -285,7 +314,7 @@ machines without `libnvidia-ml.so`.
 resulting binary reports live data on NVIDIA hosts.
 
 For webview development, `./scripts/dev-server.sh` defaults to
-`GPU=auto`: it rebuilds `./monitor` before starting, uses the `nvml`
+`GPU=auto`: it rebuilds a local development binary before starting, uses the `nvml`
 build tag when `libnvidia-ml.so` is available, and falls back to the
 stub collector otherwise. Use `GPU=nvml ./scripts/dev-server.sh` to
 force a real-NVML build, or `GPU=stub ./scripts/dev-server.sh` to force
@@ -315,13 +344,12 @@ and prints a human-readable summary of CPU/GPU/memory/storage state. It
 chooses one of two modes automatically:
 
 - **systemd mode** (preferred, used when `sudo -n true` works): installs
-  to `/usr/local/bin/monitor` and uses a uniquely-named unit
-  `monitor-live-test.service` so a real install under the name `monitor`
-  is never touched. Cleanup unregisters the unit and deletes the files.
-- **direct mode** (fallback, when sudo isn't available): installs to
-  `~/.local/bin/monitor-live-test` and runs the binary directly via `nohup`. The
-  PID is tracked in a file; cleanup `kill`s it and removes the install
-  directory.
+  an isolated test binary and uniquely named systemd unit, so a regular
+  `workstation-probe` install is not touched. Cleanup unregisters the unit
+  and deletes the files.
+- **direct mode** (fallback, when sudo isn't available): installs an isolated
+  user-writable test binary and runs it directly via `nohup`. The PID is
+  tracked in a file; cleanup `kill`s it and removes the install directory.
 
 Override the port: `PORT=19191 make live-test`
 Force a specific mode: `MODE=direct make live-test` or `MODE=systemd make live-test`

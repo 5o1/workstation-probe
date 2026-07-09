@@ -1,8 +1,0 @@
-name: ws02
-api: "http://192.168.1.102:19090"
-refresh: "30s"
-modules:
-  - cpu
-  - memory
-  - gpu
-  - storage

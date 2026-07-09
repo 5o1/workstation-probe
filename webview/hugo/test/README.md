@@ -78,10 +78,10 @@ local CPU, memory, GPU, and storage panels. CORS is enabled on the dev
 probe server, so the cross-origin fetch from `localhost:1313` to
 `localhost:19090` works.
 
-`scripts/dev-server.sh` defaults to `GPU=auto`: it rebuilds `./monitor`
-before starting, uses the `nvml` build tag when `libnvidia-ml.so` is
-available, and falls back to the stub GPU collector otherwise. Force a
-mode with `GPU=nvml ./scripts/dev-server.sh` or
+`scripts/dev-server.sh` defaults to `GPU=auto`: it rebuilds the local
+development server binary before starting, uses the `nvml` build tag when
+`libnvidia-ml.so` is available, and falls back to the stub GPU collector
+otherwise. Force a mode with `GPU=nvml ./scripts/dev-server.sh` or
 `GPU=stub ./scripts/dev-server.sh`.
 
 ## Layout
