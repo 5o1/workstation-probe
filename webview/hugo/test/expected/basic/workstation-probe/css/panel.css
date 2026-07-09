@@ -579,10 +579,15 @@
 }
 
 .workstation-probe-sub-row-bar {
-  position: relative;
   height: 10px;
   display: flex;
   align-items: center;
+}
+
+.workstation-probe-sub-row-bar-track {
+  position: relative;
+  width: 100%;
+  height: 10px;
 }
 
 .workstation-probe-sub-row-bar-used {
