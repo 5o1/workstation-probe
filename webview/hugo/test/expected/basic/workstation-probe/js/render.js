@@ -509,9 +509,6 @@ function renderGpuCell(dev) {
   const powerDetail = dev.power_limit_watts > 0
     ? `${power} / ${dev.power_limit_watts.toFixed(0)} W`
     : power;
-  const tempPct = typeof dev.temperature_c === 'number' && dev.temperature_c > 0
-    ? clamp(dev.temperature_c, 0, 100)
-    : 0;
   const error = dev.error
     ? `<div class="${SUB_CLASS}-gpu-cell-error">${escapeHtml(dev.error)}</div>`
     : '';
@@ -524,7 +521,6 @@ function renderGpuCell(dev) {
           <span class="${SUB_CLASS}-gpu-cell-name" title="${name}">${name}</span>
         </div>
         <div class="${SUB_CLASS}-gpu-cell-kpis">
-          <span><span>GPU</span><strong>${gpuUtil}</strong></span>
           <span><span>TEMP</span><strong style="color:${temp.color}">${temp.text}</strong></span>
         </div>
       </div>
@@ -533,7 +529,6 @@ function renderGpuCell(dev) {
         ${renderGpuMeter('GPU', gpuUtil, gpuPct, gpuStatusColor(gpuStatus(gpuPct)))}
         ${renderGpuMeter('VRAM', memPair.usedText, memPct, memPressureColor(memPct), memPair.subText)}
         ${renderGpuMeter('PWR', powerDetail, powerPct, powerPct > 0 ? memPressureColor(powerPct) : 'var(--wsp-fg-faint)', dev.power_limit_watts > 0 ? `${powerPct.toFixed(0)}%` : 'no cap')}
-        ${renderGpuMeter('TEMP', temp.text, tempPct, temp.color)}
       </div>
     </div>
   `;
@@ -655,8 +650,10 @@ function renderStorageRows(container, disks) {
         <span class="${SUB_CLASS}-row-alias">${escapeHtml(alias)}</span>
         <span class="${SUB_CLASS}-row-path" title="${escapeHtml(path)}">${escapeHtml(path)}</span>
         <div class="${SUB_CLASS}-row-bar">
-          <div class="${SUB_CLASS}-row-bar-used" style="width:${pct.toFixed(2)}%;background:${usedColor}"></div>
-          <div class="${SUB_CLASS}-row-bar-free" style="width:${freePct.toFixed(2)}%"></div>
+          <div class="${SUB_CLASS}-row-bar-track">
+            <div class="${SUB_CLASS}-row-bar-used" style="width:${pct.toFixed(2)}%;background:${usedColor}"></div>
+            <div class="${SUB_CLASS}-row-bar-free" style="width:${freePct.toFixed(2)}%"></div>
+          </div>
         </div>
         <span class="${SUB_CLASS}-row-pct" style="color:${usedColor}">${escapeHtml(sizeText)}</span>
       </div>
