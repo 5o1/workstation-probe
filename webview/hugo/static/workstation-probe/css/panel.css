@@ -532,7 +532,7 @@
 .workstation-probe-sub-storage {
   display: grid;
   grid-template-columns: max-content minmax(80px, 160px) minmax(96px, 1fr) max-content;
-  align-items: center;
+  align-items: stretch;
   column-gap: 0.75rem;
   font-family: var(--wsp-mono);
   font-size: 0.8125rem;
@@ -545,8 +545,9 @@
 
 .workstation-probe-sub-row > * {
   min-width: 0;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
 }
 
 .workstation-probe-sub-row > :first-child {
@@ -579,7 +580,6 @@
 }
 
 .workstation-probe-sub-row-bar {
-  height: 10px;
   display: flex;
   align-items: center;
 }
@@ -592,10 +592,11 @@
 
 .workstation-probe-sub-row-bar-used {
   position: absolute;
-  top: 0;
+  top: 50%;
   left: 0;
   height: 10px;
   border-radius: 1px;
+  transform: translateY(-50%);
   transition: width 0.4s ease;
 }
 
@@ -613,6 +614,7 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   min-width: 56px;
+  justify-content: flex-end;
   text-align: right;
 }
 
