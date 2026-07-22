@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="{{ site.Language.Locale | default `en` }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{ $destination := "docs/" | relURL }}
+    <meta http-equiv="refresh" content="0; url={{ $destination }}">
+    <link rel="canonical" href="{{ $destination }}">
+    <title>{{ site.Title }}</title>
+    <script>window.location.replace({{ printf "%q" $destination | safeJS }});</script>
+  </head>
+  <body>
+    <p>Redirecting to the <a href="{{ $destination }}">workstation probe demo</a>…</p>
+  </body>
+</html>
