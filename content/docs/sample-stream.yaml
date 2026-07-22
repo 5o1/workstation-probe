@@ -1,0 +1,8 @@
+name: "Simulated Workstation"
+api: "sample-stream"
+refresh: "1s"
+modules:
+  - cpu
+  - memory
+  - gpu
+  - storage
