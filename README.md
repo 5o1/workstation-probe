@@ -1,9 +1,13 @@
-# workstation-probe
+# [workstation-probe](https://5o1.github.io/workstation-probe/)
+
+[![main CI](https://github.com/5o1/workstation-probe/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/5o1/workstation-probe/actions/workflows/ci.yml?query=branch%3Amain) [![public/demo Pages](https://github.com/5o1/workstation-probe/actions/workflows/deploy.yml/badge.svg?branch=public%2Fdemo)](https://github.com/5o1/workstation-probe/actions/workflows/deploy.yml?query=branch%3Apublic%2Fdemo)
 
 A small REST server that exposes the local machine's CPU/GPU/memory/storage
 load as JSON. Built for monitoring dashboards that need a stable contract
 across heterogeneous hosts (with or without NVIDIA GPUs, with arbitrary
 mount tables).
+
+A sample website is hosted on [GitHub Pages](https://5o1.github.io/workstation-probe/).
 
 ## Quick start
 
